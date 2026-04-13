@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="80%" fx="50%" fy="40%">
+      <stop offset="0%" stop-color="#B388FF"/>
+      <stop offset="100%" stop-color="#7C4DFF"/>
+    </radialGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bgGradient)"/>
+  <!-- Emoji face: ^   ^  ) -->
+  <!-- Left eye (^) -->
+  <path d="M44 56 Q48 52 52 56" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Right eye (^) -->
+  <path d="M76 56 Q80 52 84 56" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Smile ( ) -->
+  <path d="M52 80 Q64 92 76 80" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

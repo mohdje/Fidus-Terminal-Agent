@@ -1,0 +1,5 @@
+<Solution>
+ <Folder Name="/Fidus/">
+    <Project Path="Fidus/Fidus.csproj" />
+  </Folder>
+</Solution>

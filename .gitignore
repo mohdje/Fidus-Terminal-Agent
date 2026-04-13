@@ -1,0 +1,53 @@
+# .NET build results
+Fidus/bin/
+Fidus/obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code settings
+.vscode/
+
+# Rider settings
+.idea/
+*.sln.iml
+
+# Build outputs
+Fidus/publish/*
+!Fidus/publish/DEBIAN/
+!Fidus/publish/DEBIAN/control
+!Fidus/publish/fidus-logo.svg
+Fidus/deb/
+*.deb
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Other
+*.swp
+*.tmp
+
+# NuGet packages
+*.nupkg
+packages/
+
+# Dotnet CLI
+.fidus/
+
+# Snapshots
+*.snupkg
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Trash
+*~
