@@ -1,6 +1,7 @@
 ﻿using PromptVit;
 using PromptVit.AIClients;
 using Fidus;
+using ConsoleInk;
 
 var commandArgs = Environment.GetCommandLineArgs();
 
@@ -98,6 +99,22 @@ static AIClient BuildAIAgent(Settings settings)
 
 static async Task Start(AIClient aiClient)
 {
+
+    var logo = @"
+    
+             ________________
+            |                |
+            |    _      _    |
+            |   / \    / \   | 
+            |                |
+            |      \__/      |
+            |________________|
+
+          FIDUS - Your AI Assistant
+
+    ";
+
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{logo}{Ansi.Reset}");
 
     Console.WriteLine(MarkdownFormatter.FormatDocument($"# Hello {Environment.UserName}, what can I do for you ?"));
 

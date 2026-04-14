@@ -1,6 +1,6 @@
 
 <p align="center">
-	<img src="Fidus/publish/fidus-logo.svg" alt="Fidus Logo" width="128" height="128"/>
+	<img src="./fidus-logo.svg" alt="Fidus Logo" width="128" height="128"/>
 </p>
 
 # Fidus: AI-Powered Linux CLI Assistant
@@ -31,8 +31,14 @@ Fidus is a powerful command-line assistant for Linux, designed to help you accom
 
 ## Example Usage
 
+If no model configured, set parameters to determine which model to use
 ```bash
-fidus -i huggingface -m gpt2 -a <your_token>
+fidus -i huggingface -m gpt-oss-20b -a <your_token>
+```
+
+Start Fidus:
+```bash
+fidus
 ```
 
 Once started, just type your request:
@@ -49,6 +55,13 @@ Or ask for code, explanations, or automation help:
 
 ## Safety
 Fidus will never run destructive commands without explicit confirmation and is designed to keep your system safe.
+
+## How to install it ?
+Download the zip in Releases section, extract the .deb package and install it:
+
+```bash
+dpkg -i fidus.deb
+```
 
 ## License
 MIT
