@@ -1,122 +1,48 @@
-﻿using PromptVit;
-using PromptVit.AIClients;
-using Fidus;
+﻿using Fidus;
 using ConsoleInk;
+using Fidus.Utils;
+using Fidus.Agent;
 
 var commandArgs = Environment.GetCommandLineArgs();
-
-var settings = SettingsManager.ReadSettings();
-settings ??= new Settings();
-
 if (commandArgs.Any(arg => arg == "-h" || arg == "--help"))
 {
-    ShowHelp();
+    CommandArgsExtension.ShowHelp();
     return;
 }
-else if (commandArgs.HasValidCommandArgs())
+if (commandArgs.Any(arg => arg == "-v" || arg == "--version"))
 {
-    var values = commandArgs.ReadArgs();
-    settings.InferenceProvider ??= values.InferenceProvider;
-    settings.ModelName ??= values.ModelName;
-    settings.ApiToken ??= values.ApiToken;
-    settings.Temperature = settings.Temperature == 0 ? values.Temperature : settings.Temperature;
-    settings.TopP = settings.TopP == 0 ? values.TopP : settings.TopP;
-    SettingsManager.SaveSettings(settings);
-}
-else
-{
-    var aiAgent = BuildAIAgent(settings);
-
-    if (aiAgent is not null)
-        await Start(aiAgent);
+    Console.WriteLine("Fidus CLI version 1.0.0");
+    return;
 }
 
-static void ShowHelp()
+var settings = SettingsManager.Init(commandArgs);
+
+Agent agent;
+var consoleDrawer = new ConsoleDrawer();
+try
 {
-    var helpText = @"# Fidus CLI Help
-
-Available command line options:
-
-- **-i, --inference-provider** `<string>`: Inference provider (e.g., huggingface, cerebras, google). Required.
-- **-m, --model** `<string>`: Model name to use. Required.
-- **-a, --apiToken** `<string>`: API token for authentication. Required.
-- **-t, --temperature** `<decimal>`: Sampling temperature (e.g., 0.7). Optional.
-- **-p, --topP** `<decimal>`: Nucleus sampling probability (e.g., 0.9). Optional.
-- **-h, --help**: Show this help message and exit.
-
-Examples:
-    fidus -i huggingface -m gpt2 -a <token>
-    fidus --inference-provider cerebras --model llama2 --apiToken <token> --temperature 0.7 --topP 0.9
-";
-    Console.WriteLine(MarkdownFormatter.FormatDocument(helpText));
+    agent = new Agent(settings, consoleDrawer);
+}
+catch (Exception ex)
+{
+    Console.WriteLine("An error occured during AI Agent initialization: " + ex.Message);
+    return;
 }
 
-static AIClient BuildAIAgent(Settings settings)
+if (agent is not null)
+    await Start(agent, consoleDrawer);
+
+
+static async Task Start(Agent aiAgent, ConsoleDrawer consoleDrawer)
 {
-    try
-    {
-        if (settings is null)
-            throw new Exception("AI Agent settings not valid");
+    Console.WriteLine();
 
-        if (string.IsNullOrEmpty(settings.InferenceProvider))
-            throw new Exception("Inference provider not set. Run command : fidus -i <inference_provider>");
+    consoleDrawer.DrawLogo();
 
-        if (string.IsNullOrEmpty(settings.ModelName))
-            throw new Exception("Model name not set. Run command : fidus -m <model_name>");
-
-        if (string.IsNullOrEmpty(settings.ApiToken))
-            throw new Exception("Api token not set. Run command : fidus -a <api_token>");
-
-
-        AIClient aiClient = null;
-        switch (settings.InferenceProvider)
-        {
-            case "huggingface":
-                aiClient = PromptVitFactory.CreateHuggingFaceClient(settings.ApiToken, settings.ModelName);
-                break;
-            case "cerebras":
-                aiClient = PromptVitFactory.CreateCerebrasClient(settings.ApiToken, settings.ModelName);
-                break;
-            case "google":
-                aiClient = PromptVitFactory.CreateGoogleAIStudioClient(settings.ApiToken, settings.ModelName);
-                break;
-        }
-
-        if (aiClient is null)
-            throw new Exception("AI Agent inference provider not valid");
-
-        aiClient.SetSystemPrompt(Agent.GetSystemPrompt());
-        aiClient.SetTools(Agent.GetAgentTools());
-
-        return aiClient;
-    }
-    catch (System.Exception ex)
-    {
-        Console.WriteLine("An error occured during AI Agent initialization: " + ex.Message);
-        return null;
-    }
-}
-
-static async Task Start(AIClient aiClient)
-{
-
-    var logo = @"
-    
-             ________________
-            |                |
-            |    _      _    |
-            |   / \    / \   | 
-            |                |
-            |      \__/      |
-            |________________|
-
-          FIDUS - Your AI Assistant
-
-    ";
-
-    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{logo}{Ansi.Reset}");
-
-    Console.WriteLine(MarkdownFormatter.FormatDocument($"# Hello {Environment.UserName}, what can I do for you ?"));
+    Console.WriteLine();
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}   Fidus, your AI assistant");
+    Console.WriteLine();
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgWhite} Hello {Environment.UserName}, what can I do for you ? {Ansi.Reset}");
 
     while (true)
     {
@@ -128,12 +54,28 @@ static async Task Start(AIClient aiClient)
             break;
 
         Console.WriteLine();
-        Console.WriteLine(MarkdownFormatter.FormatDocument("## Thinking..."));
-        Console.WriteLine();
 
-        var response = await aiClient.Invoke(userInput);
+        var animationCancellationTokenSource = new CancellationTokenSource();
 
-        Console.WriteLine(MarkdownFormatter.FormatDocument(response));
+        try
+        {
+            consoleDrawer.StartLoadingAnimationAsync("Thinking...");
+
+            await Task.Delay(2000);
+
+            var response = await aiAgent.Invoke(userInput);
+
+            await consoleDrawer.StopLoadingAnimationAsync();
+
+            Console.WriteLine(MarkdownFormatter.FormatDocument(response));
+            Console.WriteLine();
+        }
+        catch (Exception ex)
+        {
+            await consoleDrawer.StopLoadingAnimationAsync();
+            Console.WriteLine();
+            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Something went wrong, please try again.{Ansi.Reset}");
+        }
     }
 }
 

@@ -1,3 +1,5 @@
+using Fidus;
+
 public static class CommandArgsExtension
 {
     readonly static CommandArg[] ValidCommandArgs =
@@ -12,6 +14,25 @@ public static class CommandArgsExtension
     {
         var validArgs = ValidCommandArgs.SelectMany(c => c.Names);
         return commandArgs?.Any(arg => validArgs.Contains(arg)) == true;
+    }
+    public static void ShowHelp()
+    {
+        var helpText = @"# Fidus CLI Help
+
+Available command line options:
+
+- **-i, --inference-provider** `<string>`: Inference provider (e.g., huggingface, cerebras, google). Required.
+- **-m, --model** `<string>`: Model name to use. Required.
+- **-a, --apiToken** `<string>`: API token for authentication. Required.
+- **-t, --temperature** `<decimal>`: Sampling temperature (e.g., 0.7). Optional.
+- **-p, --topP** `<decimal>`: Nucleus sampling probability (e.g., 0.9). Optional.
+- **-h, --help**: Show this help message and exit.
+
+Examples:
+    fidus -i huggingface -m gpt2 -a <token>
+    fidus --inference-provider cerebras --model llama2 --apiToken <token> --temperature 0.7 --topP 0.9
+";
+        Console.WriteLine(MarkdownFormatter.FormatDocument(helpText));
     }
 
     public static Settings ReadArgs(this string[] commandArgs)

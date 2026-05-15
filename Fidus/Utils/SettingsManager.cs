@@ -3,8 +3,24 @@ using System.Text.Json;
 public static class SettingsManager
 {
     readonly static string SettingsFilePath = Path.Join(AppContext.BaseDirectory, "fidus_settings.json");
+    public static Settings Init(string[] commandArgs)
+    {
+        var settings = ReadSettings();
+        settings ??= new Settings();
+        if (commandArgs.HasValidCommandArgs())
+        {
+            var values = commandArgs.ReadArgs();
+            settings.InferenceProvider ??= values.InferenceProvider;
+            settings.ModelName ??= values.ModelName;
+            settings.ApiToken ??= values.ApiToken;
+            settings.Temperature = settings.Temperature == 0 ? values.Temperature : settings.Temperature;
+            settings.TopP = settings.TopP == 0 ? values.TopP : settings.TopP;
+            SaveSettings(settings);
+        }
+        return settings;
+    }
 
-    public static Settings ReadSettings()
+    private static Settings ReadSettings()
     {
         try
         {
@@ -20,7 +36,7 @@ public static class SettingsManager
         }
     }
 
-    public static void SaveSettings(Settings settings)
+    private static void SaveSettings(Settings settings)
     {
         var settingsJson = JsonSerializer.Serialize(settings);
         File.WriteAllText(SettingsFilePath, settingsJson);

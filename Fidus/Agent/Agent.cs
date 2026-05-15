@@ -1,13 +1,67 @@
+using Fidus.Utils;
 using PromptVit;
-using System.Diagnostics;
-using Fidus;
-using System.Text;
+using PromptVit.AIClients;
 
-public static class Agent
+namespace Fidus.Agent
 {
-    public static string GetSystemPrompt()
+    public class Agent
     {
-        return @$"You are an extremely capable CLI assistant that lives inside the user's terminal.
+        readonly AIClient _aiClient;
+        readonly BashCommandTool bashCommandTool;
+        readonly InternetSearchTool internetSearchTool;
+
+        public Agent(Settings settings, ConsoleDrawer consoleDrawer)
+        {
+            bashCommandTool = new BashCommandTool(consoleDrawer);
+            internetSearchTool = new InternetSearchTool(consoleDrawer);
+            _aiClient = BuildAIAgent(settings);
+        }
+
+        public async Task<string> Invoke(string userInput)
+        {
+            return await _aiClient.Invoke(userInput);
+        }
+        private AIClient BuildAIAgent(Settings settings)
+        {
+            if (settings is null)
+                throw new Exception("AI Agent settings not valid");
+
+            if (string.IsNullOrEmpty(settings.InferenceProvider))
+                throw new Exception("Inference provider not set. Run command : fidus -i <inference_provider>");
+
+            if (string.IsNullOrEmpty(settings.ModelName))
+                throw new Exception("Model name not set. Run command : fidus -m <model_name>");
+
+            if (string.IsNullOrEmpty(settings.ApiToken))
+                throw new Exception("Api token not set. Run command : fidus -a <api_token>");
+
+
+            AIClient aiClient = null;
+            switch (settings.InferenceProvider)
+            {
+                case "huggingface":
+                    aiClient = PromptVitFactory.CreateHuggingFaceClient(settings.ApiToken, settings.ModelName);
+                    break;
+                case "cerebras":
+                    aiClient = PromptVitFactory.CreateCerebrasClient(settings.ApiToken, settings.ModelName);
+                    break;
+                case "google":
+                    aiClient = PromptVitFactory.CreateGoogleAIStudioClient(settings.ApiToken, settings.ModelName);
+                    break;
+            }
+
+            if (aiClient is null)
+                throw new Exception("AI Agent inference provider not valid");
+
+            aiClient.SetSystemPrompt(GetSystemPrompt());
+            aiClient.SetTools([bashCommandTool, internetSearchTool]);
+
+            return aiClient;
+        }
+
+        private string GetSystemPrompt()
+        {
+            return @$"You are an extremely capable CLI assistant that lives inside the user's terminal.
 
             You have two equally important modes:
 
@@ -15,7 +69,7 @@ public static class Agent
             2. Normal helpful assistant — answer questions, explain concepts, write short code snippets, give advice, debug problems conceptually, etc.
 
             Rules you MUST follow strictly:
-
+            - When user asks a question about recent events, use the internet search tool to get up-to-date information and include it in your answer. DO NOT make up information that can be easily searched on the web.
             - When user asks to do something DO IT, unless it breaks safety rules.
             - Safety first — never suggest or run anything that looks destructive (rm -rf /, rm -rf ~/*, :(){{ :|:& }};:, chmod -R 777 /, etc.) without MULTIPLE strong warnings.
             - Never assume sudo unless the user explicitly asked for elevated privileges.
@@ -52,113 +106,6 @@ public static class Agent
             ""I'm not going to run or suggest that command. It looks dangerous or destructive.""
             
             After you answered a question or executed the requested action ask the user if there is anything else you could do for him.";
-    }
-
-    public static IAITool[] GetAgentTools()
-    {
-        return [
-             new AITool<string, ExecuteBashCommandParameters>("executeBashCommand", "Execute a bash command.",
-                [
-                    new AIToolParameter("bashCommand", "A bash command to execute (example: ls). Returns the output of the command.", "string"),
-                ],
-                async (args) => await ExecuteBashCommand(args.BashCommand)),
-            ];
-    }
-
-    private static async Task<string> ExecuteBashCommand(string command)
-    {
-        try
-        {
-            Console.WriteLine(MarkdownFormatter.FormatDocument($"### Execute command"));
-            Console.WriteLine(command);
-
-            // if (string.IsNullOrWhiteSpace(command) || command.Length > 16384)
-            //     return "Command is empty or too long.";
-
-            // if (command.Contains("\0") || command.Contains("\u2028") || command.Contains("\u2029"))
-            //     return "Command contains invalid characters.";
-
-            string tempScriptPath = null;
-            bool isMultiLine = command.Contains("\n") || command.Contains("\r") || command.Contains("EOF");
-            ProcessStartInfo psi;
-
-            if (isMultiLine)
-            {
-                // Write the script to a temporary file
-                tempScriptPath = Path.Combine(Path.GetTempPath(), $"fidus_script_{Guid.NewGuid()}.sh");
-                await File.WriteAllTextAsync(tempScriptPath, command);
-                psi = new ProcessStartInfo
-                {
-                    FileName = "/bin/bash",
-                    Arguments = tempScriptPath,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-            }
-            else
-            {
-                // Escape double quotes for shell safety
-                var safeCommand = command.Replace("\"", "\\\"");
-                psi = new ProcessStartInfo
-                {
-                    FileName = "/bin/bash",
-                    Arguments = $"-c \"{safeCommand}\"",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-            }
-
-            using var process = Process.Start(psi);
-            if (process == null)
-            {
-                var message = $"Failed to start process for command: {command}";
-                Console.WriteLine(message);
-                if (tempScriptPath != null && File.Exists(tempScriptPath)) File.Delete(tempScriptPath);
-                return message;
-            }
-
-            var outputTask = StreamOutput(process.StandardOutput);
-            var errorTask = StreamOutput(process.StandardError);
-
-            var outputs = await Task.WhenAll(outputTask, errorTask);
-            await process.WaitForExitAsync();
-
-            if (tempScriptPath != null && File.Exists(tempScriptPath)) File.Delete(tempScriptPath);
-
-            if (process.ExitCode == 0)
-            {
-                return outputs[0];
-            }
-            else
-            {
-                return outputs[1];
-            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"ExecuteBashCommand failed: {ex.Message}");
-            return $"ExecuteBashCommand failed: {ex.Message}";
-        }
-    }
-
-    private static Task<string> StreamOutput(StreamReader streamReader)
-    {
-        var output = new StringBuilder();
-        while (true)
-        {
-            var line = streamReader.ReadLine();
-            if (line != null)
-            {
-                output.AppendLine(line);
-                Console.WriteLine(line);
-            }
-            else
-                break;
-        }
-        return Task.FromResult(output.ToString());
     }
 }
