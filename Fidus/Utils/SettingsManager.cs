@@ -13,8 +13,8 @@ public static class SettingsManager
             settings.InferenceProvider ??= values.InferenceProvider;
             settings.ModelName ??= values.ModelName;
             settings.ApiToken ??= values.ApiToken;
-            settings.Temperature = settings.Temperature == 0 ? values.Temperature : settings.Temperature;
-            settings.TopP = settings.TopP == 0 ? values.TopP : settings.TopP;
+            settings.Temperature ??= values.Temperature.GetValueOrDefault(0.7M);
+            settings.TopP ??= values.TopP.GetValueOrDefault(0.9M);
             SaveSettings(settings);
         }
         return settings;

@@ -27,7 +27,7 @@ namespace Fidus.Agent
             var command = parameters.BashCommand;
             try
             {
-                _consoleDrawer.StartLoadingAnimationAsync("Executing bash command...");
+                _consoleDrawer.StartLoadingAnimationAsync("Executing bash command", command);
 
                 string tempScriptPath = null;
                 bool isMultiLine = command.Contains("\n") || command.Contains("\r") || command.Contains("EOF");

@@ -7,9 +7,7 @@ namespace Fidus.Utils
         bool loadingAnimationEnabled = false;
         int loadingRefreshRate = 200;
 
-        int cursorMessageTop;
-        int? cursorSubmessageTop;
-
+        CancellationTokenSource cancelAnimationTokenSource;
 
         public void DrawLogo()
         {
@@ -37,25 +35,28 @@ namespace Fidus.Utils
             Console.CursorVisible = false;
 
             loadingAnimationEnabled = true;
-            Console.Write($"{Ansi.Bold}{Ansi.FgCyan}{message}{Ansi.Reset}");
 
-            int left = Console.CursorLeft;
-            cursorMessageTop = Console.CursorTop;
+            var subMessageLength = 20;
+            var displaySubmessage = subMessage.Length >= subMessageLength ? $"{subMessage[..subMessageLength]}..." : $"{subMessage}";
+            if (!string.IsNullOrEmpty(displaySubmessage))
+                displaySubmessage = $"{displaySubmessage} ";
 
-            if (!string.IsNullOrEmpty(subMessage))
+            Console.Write($"{Ansi.Bold}{Ansi.FgCyan}{message}{Ansi.Reset} {Ansi.Bold}{Ansi.FgBrightBlack}{displaySubmessage}{Ansi.Reset}");
+
+            cancelAnimationTokenSource = new CancellationTokenSource();
+            while (loadingAnimationEnabled && !cancelAnimationTokenSource.Token.IsCancellationRequested)
             {
-                Console.WriteLine();
-                Console.Write($"{Ansi.Bold}{Ansi.FgBrightBlack}{subMessage}{Ansi.Reset}");
-                cursorMessageTop -= 1;
-                cursorSubmessageTop = Console.CursorTop;
-            }
-
-            while (loadingAnimationEnabled)
-            {
-                Console.SetCursorPosition(left, cursorMessageTop);
-                Console.Write($"{Ansi.Bold}{Ansi.FgCyan}{thinkingAnimation[animationIndex]}{Ansi.Reset}");
+                Console.Write($"{Ansi.FgCyan}{thinkingAnimation[animationIndex]}{Ansi.Reset}");
                 animationIndex = animationIndex == thinkingAnimation.Length - 1 ? 0 : animationIndex + 1;
-                await Task.Delay(loadingRefreshRate);
+                Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                try
+                {
+                    await Task.Delay(loadingRefreshRate, cancelAnimationTokenSource.Token);
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
             }
         }
 
@@ -64,21 +65,13 @@ namespace Fidus.Utils
             if (loadingAnimationEnabled)
             {
                 loadingAnimationEnabled = false;
-                await Task.Delay(loadingRefreshRate * 2);
+                cancelAnimationTokenSource.Cancel();
 
-                EraseLine(cursorMessageTop);
-                if (cursorSubmessageTop.HasValue)
-                    EraseLine(cursorSubmessageTop.Value);
-
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write(new string(' ', Console.WindowWidth));
+                Console.SetCursorPosition(0, Console.CursorTop);
                 Console.CursorVisible = true;
             }
-        }
-
-        private void EraseLine(int line)
-        {
-            Console.SetCursorPosition(0, line);
-            Console.Write(new string(' ', Console.WindowWidth));
-            Console.SetCursorPosition(0, line);
         }
     }
 }

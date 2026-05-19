@@ -28,7 +28,7 @@ namespace Fidus.Agent
         }
         protected override async Task<string> ExecuteToolAsync(InternetSearchParameters parameters)
         {
-            _consoleDrawer.StartLoadingAnimationAsync("Searching on the internet...", parameters.Query);
+            _consoleDrawer.StartLoadingAnimationAsync("Searching on the internet", parameters.Query);
 
             var queryObject = new { Query = parameters.Query, SearchDepth = "advanced" };
             var queryJson = JsonSerializer.Serialize(queryObject, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
