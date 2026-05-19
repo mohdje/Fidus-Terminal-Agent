@@ -4,18 +4,21 @@ using Fidus.Utils;
 using Fidus.Agent;
 
 var commandArgs = Environment.GetCommandLineArgs();
-if (commandArgs.Any(arg => arg == "-h" || arg == "--help"))
-{
-    CommandArgsExtension.ShowHelp();
+var hasReadOnlyArgs = CommandArgsExtension.HasReadOnlyArgs(commandArgs);
+if (hasReadOnlyArgs)
     return;
-}
-if (commandArgs.Any(arg => arg == "-v" || arg == "--version"))
-{
-    Console.WriteLine("Fidus CLI version 1.0.0");
-    return;
-}
 
 var settings = SettingsManager.Init(commandArgs);
+if (commandArgs.Any(arg => arg == "-s" || arg == "--settings"))
+{
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightYellow}Current settings:{Ansi.Reset}");
+    Console.WriteLine($"Inference Provider: {settings.InferenceProvider}");
+    Console.WriteLine($"Model Name: {settings.ModelName}");
+    Console.WriteLine($"API Token: {settings.ApiToken}");
+    Console.WriteLine($"Temperature: {settings.Temperature}");
+    Console.WriteLine($"TopP: {settings.TopP}");
+    return;
+}
 
 Agent agent;
 var consoleDrawer = new ConsoleDrawer();
@@ -53,15 +56,13 @@ static async Task Start(Agent aiAgent, ConsoleDrawer consoleDrawer)
         if (string.IsNullOrEmpty(userInput))
             break;
 
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        Console.WriteLine($"> {Ansi.FgBrightMagenta}{userInput}{Ansi.Reset}");
         Console.WriteLine();
-
-        var animationCancellationTokenSource = new CancellationTokenSource();
 
         try
         {
-            consoleDrawer.StartLoadingAnimationAsync("Thinking...");
-
-            await Task.Delay(2000);
+            consoleDrawer.StartLoadingAnimationAsync("Thinking");
 
             var response = await aiAgent.Invoke(userInput);
 
@@ -73,8 +74,11 @@ static async Task Start(Agent aiAgent, ConsoleDrawer consoleDrawer)
         catch (Exception ex)
         {
             await consoleDrawer.StopLoadingAnimationAsync();
+            File.AppendAllText("error.log", $"[{DateTime.Now}] Error: {ex.Message}{Environment.NewLine}");
             Console.WriteLine();
-            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Something went wrong, please try again.{Ansi.Reset}");
+            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Something went wrong, please try again. Read logs with -l or --logs for details.{Ansi.Reset}");
+
+            Console.WriteLine($"Error details: {ex.Message}");
         }
     }
 }

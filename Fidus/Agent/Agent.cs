@@ -35,6 +35,11 @@ namespace Fidus.Agent
             if (string.IsNullOrEmpty(settings.ApiToken))
                 throw new Exception("Api token not set. Run command : fidus -a <api_token>");
 
+            if (settings.Temperature.HasValue && (settings.Temperature < 0 || settings.Temperature > 2))
+                throw new Exception("Temperature must be between 0 and 2");
+
+            if (settings.TopP.HasValue && (settings.TopP < 0 || settings.TopP > 1))
+                throw new Exception("TopP must be between 0 and 1");
 
             AIClient aiClient = null;
             switch (settings.InferenceProvider)
@@ -53,6 +58,12 @@ namespace Fidus.Agent
             if (aiClient is null)
                 throw new Exception("AI Agent inference provider not valid");
 
+            if (settings.Temperature.HasValue)
+                aiClient.Temperature = settings.Temperature.Value;
+
+            if (settings.TopP.HasValue)
+                aiClient.TopP = settings.TopP.Value;
+
             aiClient.SetSystemPrompt(GetSystemPrompt());
             aiClient.SetTools([bashCommandTool, internetSearchTool]);
 
@@ -69,7 +80,8 @@ namespace Fidus.Agent
             2. Normal helpful assistant — answer questions, explain concepts, write short code snippets, give advice, debug problems conceptually, etc.
 
             Rules you MUST follow strictly:
-            - When user asks a question about recent events, use the internet search tool to get up-to-date information and include it in your answer. DO NOT make up information that can be easily searched on the web.
+            - When user asks a question about recent events, use the internet search tool internetSearch to get up-to-date information and include it in your answer. DO NOT make up information that can be easily searched on the web.
+            - DO NOT use executeBashCommand tool to do search on the internet like running curl or similar commands to get the information. Use the internet search tool provided.
             - When user asks to do something DO IT, unless it breaks safety rules.
             - Safety first — never suggest or run anything that looks destructive (rm -rf /, rm -rf ~/*, :(){{ :|:& }};:, chmod -R 777 /, etc.) without MULTIPLE strong warnings.
             - Never assume sudo unless the user explicitly asked for elevated privileges.

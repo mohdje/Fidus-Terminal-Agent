@@ -10,12 +10,45 @@ public static class CommandArgsExtension
         new CommandArg(["-t", "--temperature"], typeof(decimal), "Temperature must be a decimal value"),
         new CommandArg(["-p", "--topP"], typeof(decimal), "TopP must be a decimal value"),
     ];
+
+    public static bool HasReadOnlyArgs(this string[]? commandArgs)
+    {
+        if (commandArgs == null)
+            return false;
+
+        if (commandArgs.Any(arg => arg == "-h" || arg == "--help"))
+        {
+            ShowHelp();
+            return true;
+        }
+        if (commandArgs.Any(arg => arg == "-v" || arg == "--version"))
+        {
+            Console.WriteLine("Fidus CLI version 1.0.0");
+            return true;
+        }
+        if (commandArgs.Any(arg => arg == "-l" || arg == "--logs"))
+        {
+            if (File.Exists("error.log"))
+            {
+                var logs = File.ReadAllText("error.log");
+                Console.WriteLine(logs);
+            }
+            else
+            {
+                Console.WriteLine("No logs found.");
+            }
+            return true;
+        }
+        return false;
+    }
+
     public static bool HasValidCommandArgs(this string[]? commandArgs)
     {
         var validArgs = ValidCommandArgs.SelectMany(c => c.Names);
         return commandArgs?.Any(arg => validArgs.Contains(arg)) == true;
     }
-    public static void ShowHelp()
+
+    private static void ShowHelp()
     {
         var helpText = @"# Fidus CLI Help
 
@@ -27,6 +60,8 @@ Available command line options:
 - **-t, --temperature** `<decimal>`: Sampling temperature (e.g., 0.7). Optional.
 - **-p, --topP** `<decimal>`: Nucleus sampling probability (e.g., 0.9). Optional.
 - **-h, --help**: Show this help message and exit.
+- **-v, --version**: Show the version of the application and exit.
+- **-s, --settings**: Show the current settings and exit.
 
 Examples:
     fidus -i huggingface -m gpt2 -a <token>
