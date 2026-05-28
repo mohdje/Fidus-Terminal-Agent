@@ -62,7 +62,11 @@ Download the zip in Releases section, extract the .deb package and install it:
 ```bash
 dpkg -i fidus.deb
 ```
+Create a link to the fidus binary so you can launch Fidus from anywhere
 
+```bash
+sudo ln -s /usr/bin/fidusterminal/fidus /usr/bin/fidus
+```
 ## License
 MIT
 
