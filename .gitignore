@@ -16,12 +16,11 @@ Fidus/obj/
 *.sln.iml
 
 # Build outputs
-Fidus/publish/*
-!Fidus/publish/DEBIAN/
-!Fidus/publish/DEBIAN/control
-!Fidus/publish/fidus-logo.svg
-Fidus/deb/
-*.deb
+build/publish/*
+!build/publish/DEBIAN/
+!build/publish/DEBIAN/control
+build/*.deb
+build/*.deb.zip
 
 # OS generated files
 .DS_Store
