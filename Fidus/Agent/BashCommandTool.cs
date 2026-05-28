@@ -8,7 +8,7 @@ namespace Fidus.Agent
 {
     public class BashCommandTool : AgentTool<ExecuteBashCommandParameters>
     {
-        public BashCommandTool(ConsoleDrawer consoleDrawer) : base(consoleDrawer)
+        public BashCommandTool(ConsoleHelper consoleDrawer) : base(consoleDrawer)
         {
 
         }

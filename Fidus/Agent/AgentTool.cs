@@ -6,8 +6,8 @@ namespace Fidus.Agent
 {
     public abstract class AgentTool<T> : IAITool
     {
-        protected readonly ConsoleDrawer _consoleDrawer;
-        public AgentTool(ConsoleDrawer consoleDrawer)
+        protected readonly ConsoleHelper _consoleDrawer;
+        public AgentTool(ConsoleHelper consoleDrawer)
         {
             _consoleDrawer = consoleDrawer;
         }

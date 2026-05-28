@@ -10,7 +10,7 @@ namespace Fidus.Agent
         readonly BashCommandTool bashCommandTool;
         readonly InternetSearchTool internetSearchTool;
 
-        public Agent(Settings settings, ConsoleDrawer consoleDrawer)
+        public Agent(Settings settings, ConsoleHelper consoleDrawer)
         {
             bashCommandTool = new BashCommandTool(consoleDrawer);
             internetSearchTool = new InternetSearchTool(consoleDrawer);

@@ -17,7 +17,7 @@ namespace Fidus.Agent
                 new AIToolParameter("query", "The search query to perform on the internet (example: 'What is weather today in Paris?').", "string"),
             ];
 
-        public InternetSearchTool(ConsoleDrawer consoleDrawer) : base(consoleDrawer)
+        public InternetSearchTool(ConsoleHelper consoleDrawer) : base(consoleDrawer)
         {
             _httpClient = new HttpClient
             {
