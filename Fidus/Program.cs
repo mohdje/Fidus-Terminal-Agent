@@ -21,7 +21,7 @@ if (commandArgs.Any(arg => arg == "-s" || arg == "--settings"))
 }
 
 Agent agent;
-var consoleDrawer = new ConsoleDrawer();
+var consoleDrawer = new ConsoleHelper();
 try
 {
     agent = new Agent(settings, consoleDrawer);
@@ -36,11 +36,11 @@ if (agent is not null)
     await Start(agent, consoleDrawer);
 
 
-static async Task Start(Agent aiAgent, ConsoleDrawer consoleDrawer)
+static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
 {
     Console.WriteLine();
 
-    consoleDrawer.DrawLogo();
+    consoleHelper.DrawLogo();
 
     Console.WriteLine();
     Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}   Fidus, your AI assistant");
@@ -49,31 +49,24 @@ static async Task Start(Agent aiAgent, ConsoleDrawer consoleDrawer)
 
     while (true)
     {
-        Console.Write("> ");
-
-        var userInput = Console.ReadLine();
-
+        var userInput = consoleHelper.GetUserInput();
         if (string.IsNullOrEmpty(userInput))
             break;
 
-        Console.SetCursorPosition(0, Console.CursorTop - 1);
-        Console.WriteLine($"> {Ansi.FgBrightMagenta}{userInput}{Ansi.Reset}");
         Console.WriteLine();
 
         try
         {
-            consoleDrawer.StartLoadingAnimationAsync("Thinking");
-
+            consoleHelper.StartLoadingAnimationAsync("Thinking");
             var response = await aiAgent.Invoke(userInput);
-
-            await consoleDrawer.StopLoadingAnimationAsync();
+            await consoleHelper.StopLoadingAnimationAsync();
 
             Console.WriteLine(MarkdownFormatter.FormatDocument(response));
             Console.WriteLine();
         }
         catch (Exception ex)
         {
-            await consoleDrawer.StopLoadingAnimationAsync();
+            await consoleHelper.StopLoadingAnimationAsync();
             File.AppendAllText("error.log", $"[{DateTime.Now}] Error: {ex.Message}{Environment.NewLine}");
             Console.WriteLine();
             Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Something went wrong, please try again. Read logs with -l or --logs for details.{Ansi.Reset}");
@@ -82,4 +75,6 @@ static async Task Start(Agent aiAgent, ConsoleDrawer consoleDrawer)
         }
     }
 }
+
+
 

@@ -2,7 +2,7 @@ using ConsoleInk;
 
 namespace Fidus.Utils
 {
-    public class ConsoleDrawer
+    public class ConsoleHelper
     {
         bool loadingAnimationEnabled = false;
         int loadingRefreshRate = 200;
@@ -36,19 +36,17 @@ namespace Fidus.Utils
 
             loadingAnimationEnabled = true;
 
-            var subMessageLength = 20;
+            var subMessageLength = 50;
             var displaySubmessage = subMessage.Length >= subMessageLength ? $"{subMessage[..subMessageLength]}..." : $"{subMessage}";
-            if (!string.IsNullOrEmpty(displaySubmessage))
-                displaySubmessage = $"{displaySubmessage} ";
 
-            Console.Write($"{Ansi.Bold}{Ansi.FgCyan}{message}{Ansi.Reset} {Ansi.Bold}{Ansi.FgBrightBlack}{displaySubmessage}{Ansi.Reset}");
+            Console.Write($"{Ansi.FgCyan}{thinkingAnimation[animationIndex]}{Ansi.Reset} {Ansi.Bold}{Ansi.FgCyan}{message}{Ansi.Reset} {Ansi.Bold}{Ansi.FgBrightBlack}{displaySubmessage}{Ansi.Reset}");
 
             cancelAnimationTokenSource = new CancellationTokenSource();
             while (loadingAnimationEnabled && !cancelAnimationTokenSource.Token.IsCancellationRequested)
             {
-                Console.Write($"{Ansi.FgCyan}{thinkingAnimation[animationIndex]}{Ansi.Reset}");
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write($"{Ansi.FgCyan}{thinkingAnimation[animationIndex]}{Ansi.Reset} ");
                 animationIndex = animationIndex == thinkingAnimation.Length - 1 ? 0 : animationIndex + 1;
-                Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
                 try
                 {
                     await Task.Delay(loadingRefreshRate, cancelAnimationTokenSource.Token);
@@ -72,6 +70,35 @@ namespace Fidus.Utils
                 Console.SetCursorPosition(0, Console.CursorTop);
                 Console.CursorVisible = true;
             }
+        }
+
+        public string GetUserInput()
+        {
+            var promptIndicator = "> ";
+            Console.Write(promptIndicator);
+            var userInput = Console.ReadLine();
+
+            if (string.IsNullOrEmpty(userInput))
+                return string.Empty;
+
+            int totalLength = userInput.Length + promptIndicator.Length;
+            int consoleWidth = Console.BufferWidth;
+
+            // Calculate how many rows this input spans (ceiling division)
+            int linesSpanned = (totalLength + consoleWidth - 1) / consoleWidth;
+
+            // Move cursor to start of the input line and clear all spanned lines
+            int currentCursorTop = Console.CursorTop;
+            for (int i = 0; i < linesSpanned; i++)
+            {
+                Console.SetCursorPosition(0, currentCursorTop - linesSpanned + i);
+                Console.Write(new string(' ', consoleWidth - 1)); // Clear the line
+            }
+
+            // Reposition cursor and rewrite the input formatted
+            Console.SetCursorPosition(0, currentCursorTop - linesSpanned);
+            Console.WriteLine($"> {Ansi.FgBrightMagenta}{userInput}{Ansi.Reset}");
+            return userInput;
         }
     }
 }
