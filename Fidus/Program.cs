@@ -7,14 +7,13 @@ var commandArgs = Environment.GetCommandLineArgs();
 var hasReadOnlyArgs = CommandArgsExtension.HasReadOnlyArgs(commandArgs);
 if (hasReadOnlyArgs)
     return;
-
 var settings = SettingsManager.Init(commandArgs);
 if (commandArgs.Any(arg => arg == "-s" || arg == "--settings"))
 {
     Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightYellow}Current settings:{Ansi.Reset}");
     Console.WriteLine($"Inference Provider: {settings.InferenceProvider}");
     Console.WriteLine($"Model Name: {settings.ModelName}");
-    Console.WriteLine($"API Token: {settings.ApiToken}");
+    Console.WriteLine($"API Token: {settings.ApiToken[..4]}****{settings.ApiToken[^4..]}");
     Console.WriteLine($"Temperature: {settings.Temperature}");
     Console.WriteLine($"TopP: {settings.TopP}");
     return;
@@ -61,7 +60,8 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
             var response = await aiAgent.Invoke(userInput);
             await consoleHelper.StopLoadingAnimationAsync();
 
-            Console.WriteLine(MarkdownFormatter.FormatDocument(response));
+            var r = MarkdownConsole.Render(response);
+            Console.WriteLine(r);
             Console.WriteLine();
         }
         catch (Exception ex)

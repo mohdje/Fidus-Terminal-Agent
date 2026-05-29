@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ConsoleInk.Net" Version="0.1.6" />
+    <PackageReference Include="ReadLine" Version="2.0.1" />
   </ItemGroup>
 </Project>

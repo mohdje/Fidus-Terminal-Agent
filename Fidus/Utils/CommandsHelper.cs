@@ -1,5 +1,5 @@
 using Fidus;
-
+using ConsoleInk;
 public static class CommandArgsExtension
 {
     readonly static CommandArg[] ValidCommandArgs =
@@ -23,7 +23,7 @@ public static class CommandArgsExtension
         }
         if (commandArgs.Any(arg => arg == "-v" || arg == "--version"))
         {
-            Console.WriteLine("Fidus CLI version 1.0.0");
+            Console.WriteLine("Fidus CLI version 1.0.2");
             return true;
         }
         if (commandArgs.Any(arg => arg == "-l" || arg == "--logs"))
@@ -67,7 +67,7 @@ Examples:
     fidus -i huggingface -m gpt2 -a <token>
     fidus --inference-provider cerebras --model llama2 --apiToken <token> --temperature 0.7 --topP 0.9
 ";
-        Console.WriteLine(MarkdownFormatter.FormatDocument(helpText));
+        Console.WriteLine(MarkdownConsole.Render(helpText));
     }
 
     public static Settings ReadArgs(this string[] commandArgs)

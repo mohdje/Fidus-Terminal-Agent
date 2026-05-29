@@ -75,30 +75,28 @@ namespace Fidus.Utils
         public string GetUserInput()
         {
             var promptIndicator = "> ";
-            Console.Write(promptIndicator);
-            var userInput = Console.ReadLine();
+            var userInput = ReadLine.Read(promptIndicator);
 
             if (string.IsNullOrEmpty(userInput))
                 return string.Empty;
 
+            ReadLine.AddHistory(userInput);
+
             int totalLength = userInput.Length + promptIndicator.Length;
             int consoleWidth = Console.BufferWidth;
 
-            // Calculate how many rows this input spans (ceiling division)
             int linesSpanned = (totalLength + consoleWidth - 1) / consoleWidth;
-
-            // Move cursor to start of the input line and clear all spanned lines
             int currentCursorTop = Console.CursorTop;
             for (int i = 0; i < linesSpanned; i++)
             {
                 Console.SetCursorPosition(0, currentCursorTop - linesSpanned + i);
-                Console.Write(new string(' ', consoleWidth - 1)); // Clear the line
+                Console.Write(new string(' ', consoleWidth - 1));
             }
 
-            // Reposition cursor and rewrite the input formatted
             Console.SetCursorPosition(0, currentCursorTop - linesSpanned);
-            Console.WriteLine($"> {Ansi.FgBrightMagenta}{userInput}{Ansi.Reset}");
+            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{userInput}{Ansi.Reset}");
             return userInput;
         }
     }
 }
+

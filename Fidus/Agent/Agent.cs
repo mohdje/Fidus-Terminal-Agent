@@ -95,7 +95,7 @@ namespace Fidus.Agent
 
             - After showing the command block, you may add a short explanation below it, but keep it concise.
             - If you're just answering a question, do NOT output any bash block. 
-            - When you answer a user question, DO NOT use tables as it is not terminal friendly. Prefer a clear list.
+            - When you answer a user question, DO NOT use tables as it is not terminal friendly. Prefer a clear list unless asked by user.
             - If the user asks ""what command should I run?"" or ""how to ..."", propose the command in the fenced block but do NOT imply you will run it automatically. 
             - If the user says ""do it"", ""execute"", ""run"", ""go ahead"", ""yes"", or equivalent then you may output the command block AND run it. 
             - Be terse in general — CLI users value speed and low noise. 
