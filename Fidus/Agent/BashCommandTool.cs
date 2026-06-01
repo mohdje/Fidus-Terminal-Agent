@@ -103,7 +103,6 @@ namespace Fidus.Agent
                 if (line != null)
                 {
                     output.AppendLine(line);
-                    _consoleDrawer.StartLoadingAnimationAsync("Executing bash command...", line);
                 }
                 else
                     break;
