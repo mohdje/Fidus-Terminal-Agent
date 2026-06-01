@@ -46,7 +46,7 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
     Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}     Your AI assistant{Ansi.Reset}");
 
     Console.WriteLine();
-    Console.WriteLine($"{Ansi.Bold}{Ansi.FgWhite} Hello {Environment.UserName}, what can I do for you ? {Ansi.Reset}");
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgWhite} Hello {Ansi.Bold}{Ansi.FgCyan}{Environment.UserName}{Ansi.Reset}{Ansi.Bold}{Ansi.FgWhite}, what can I do for you ? {Ansi.Reset}");
 
     while (true)
     {
