@@ -6,13 +6,13 @@ dotnet publish ../Fidus/Fidus.csproj -c Release -r linux-x64 --self-contained tr
 
 rm -rf ./publish/usr/
 
-mkdir -p ./publish/usr/bin/fidusterminal
+mkdir -p ./publish/usr/bin/fidusCLI
 
 # Copy the built files to build/publish
-cp ../Fidus/bin/Release/net10.0/linux-x64/publish/* ./publish/usr/bin/fidusterminal/
+cp ../Fidus/bin/Release/net10.0/linux-x64/publish/* ./publish/usr/bin/fidusCLI/
 
 # Rename the main executable to "fidus"
-mv ./publish/usr/bin/fidusterminal/Fidus ./publish/usr/bin/fidusterminal/fidus
+mv ./publish/usr/bin/fidusCLI/Fidus ./publish/usr/bin/fidusCLI/fidus
 
 # Build the deb package
 dpkg-deb --build ./publish  ./fidus.deb
