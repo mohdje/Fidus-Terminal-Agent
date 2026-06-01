@@ -11,15 +11,12 @@ namespace Fidus.Utils
 
         public void DrawLogo()
         {
-            Console.WriteLine($"    {Ansi.BgMagenta}{"                      "}{Ansi.Reset}");
-            Console.WriteLine($"   {Ansi.BgMagenta}{"                        "}{Ansi.Reset}");
-            Console.WriteLine($"   {Ansi.BgMagenta}{Ansi.FgBrightWhite}{"      ██        ██      "}{Ansi.Reset}");
-            Console.WriteLine($"   {Ansi.BgMagenta}{Ansi.FgBrightWhite}{"     █  █      █  █     "}{Ansi.Reset}");
-            Console.WriteLine($"   {Ansi.BgMagenta}{"                        "}{Ansi.Reset}");
-            Console.WriteLine($"   {Ansi.BgMagenta}{Ansi.FgBrightWhite}{"        █      █        "}{Ansi.Reset}");
-            Console.WriteLine($"   {Ansi.BgMagenta}{Ansi.FgBrightWhite}{"         ██████         "}{Ansi.Reset}");
-            Console.WriteLine($"   {Ansi.BgMagenta}{"                        "}{Ansi.Reset}");
-            Console.WriteLine($"    {Ansi.BgMagenta}{"                      "}{Ansi.Reset}");
+            var eye = $"{Ansi.FgWhite}{"◠"}{Ansi.Reset}";
+            var mouth = $"{Ansi.FgWhite}{"◡"}{Ansi.Reset}";
+            Console.WriteLine($"        {Ansi.FgMagenta}{"╭───────╮"}{Ansi.Reset}");
+            Console.WriteLine($"        {Ansi.FgMagenta}{"│"}{Ansi.Reset}  {eye} {eye}  {Ansi.FgMagenta}{"│"}{Ansi.Reset}");
+            Console.WriteLine($"        {Ansi.FgMagenta}{"│"}{Ansi.Reset}   {mouth}   {Ansi.FgMagenta}{"│"}{Ansi.Reset}");
+            Console.WriteLine($"        {Ansi.FgMagenta}{"╰───────╯"}{Ansi.Reset}");
         }
 
         public async Task StartLoadingAnimationAsync(string message, string subMessage = "")

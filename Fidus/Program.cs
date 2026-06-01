@@ -42,7 +42,9 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
     consoleHelper.DrawLogo();
 
     Console.WriteLine();
-    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}   Fidus, your AI assistant");
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgMagenta}          FIDUS{Ansi.Reset}");
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}     Your AI assistant{Ansi.Reset}");
+
     Console.WriteLine();
     Console.WriteLine($"{Ansi.Bold}{Ansi.FgWhite} Hello {Environment.UserName}, what can I do for you ? {Ansi.Reset}");
 
