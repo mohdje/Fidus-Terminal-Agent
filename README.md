@@ -19,8 +19,9 @@ Fidus is a powerful command-line assistant for Linux, designed to help you accom
 ## How It Works
 
 1. Start Fidus in your terminal.
-2. Interact with the assistant using natural language or shell commands.
+2. Interact with the assistant using natural language.
 3. Fidus interprets your requests, consults the connected AI model, and executes safe commands on your behalf.
+4. Fidus can also do research on internet when up to date data are needed.
 
 ## Supported Providers
 - Hugging Face
@@ -57,16 +58,22 @@ Or ask for code, explanations, or automation help:
 Fidus will never run destructive commands without explicit confirmation and is designed to keep your system safe.
 
 ## How to install it ?
-Download the zip in Releases section, extract the .deb package and install it:
+
+Download the installation script in Release section and execute it. It will download the zip, extract the deb package, install it and create a link in /usr/bin so you can use fidus command everywhere.
+
+Or you can do the installation manually:
+
+- Download the zip in Releases section, extract the .deb package and install it:
 
 ```bash
 dpkg -i fidus.deb
 ```
-Create a link to the fidus binary so you can launch Fidus from anywhere
+- Create a link to the fidus binary so you can launch Fidus from anywhere
 
 ```bash
 sudo ln -s /usr/bin/fidusterminal/fidus /usr/bin/fidus
 ```
+
 ## License
 MIT
 
