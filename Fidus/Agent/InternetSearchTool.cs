@@ -23,7 +23,7 @@ namespace Fidus.Agent
             {
                 BaseAddress = new Uri("https://api.tavily.com/search")
             };
-            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer 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");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {Tokens.TavilyApiToken}");
 
         }
         protected override async Task<string> ExecuteToolAsync(InternetSearchParameters parameters)
