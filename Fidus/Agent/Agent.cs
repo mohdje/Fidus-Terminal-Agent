@@ -44,6 +44,9 @@ namespace Fidus.Agent
             AIClient aiClient = null;
             switch (settings.InferenceProvider)
             {
+                case "openai":
+                    aiClient = PromptVitFactory.CreateOpenAIClient(settings.ApiToken, settings.ModelName);
+                    break;
                 case "huggingface":
                     aiClient = PromptVitFactory.CreateHuggingFaceClient(settings.ApiToken, settings.ModelName);
                     break;
@@ -52,6 +55,9 @@ namespace Fidus.Agent
                     break;
                 case "google":
                     aiClient = PromptVitFactory.CreateGoogleAIStudioClient(settings.ApiToken, settings.ModelName);
+                    break;
+                case "groq":
+                    aiClient = PromptVitFactory.CreateGroqClient(settings.ApiToken, settings.ModelName);
                     break;
             }
 

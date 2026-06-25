@@ -1,5 +1,4 @@
-﻿using Fidus;
-using ConsoleInk;
+﻿using ConsoleInk;
 using Fidus.Utils;
 using Fidus.Agent;
 
