@@ -1,17 +1,12 @@
 using System.Diagnostics;
 using System.Text;
-using ConsoleInk;
 using Fidus.Utils;
 using PromptVit;
 
 namespace Fidus.Agent
 {
-    public class BashCommandTool : AgentTool<ExecuteBashCommandParameters>
+    public class BashCommandTool(ConsoleHelper consoleDrawer) : AgentTool<ExecuteBashCommandParameters>(consoleDrawer)
     {
-        public BashCommandTool(ConsoleHelper consoleDrawer) : base(consoleDrawer)
-        {
-
-        }
         public override string Name => "executeBashCommand";
 
         public override string Description => "Execute a bash command.";

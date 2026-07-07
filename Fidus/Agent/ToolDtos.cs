@@ -20,4 +20,15 @@ namespace Fidus.Agent
         public string Content { get; set; }
         public string Url { get; set; }
     }
+
+    public class EditFileParameters
+    {
+        public string FilePath { get; set; }
+        public string Content { get; set; }
+    }
+
+    public class ReadFileParameters
+    {
+        public string FilePath { get; set; }
+    }
 }
