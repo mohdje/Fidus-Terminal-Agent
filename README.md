@@ -33,12 +33,12 @@ Fidus is a powerful command-line assistant for Linux, designed to help you accom
 
 ## Example Usage
 
-If no model configured, set parameters to determine which model to use
+When using the first time execute the following to setup your terminal agent
 ```bash
-fidus -i huggingface -m gpt-oss-20b -a <your_token>
+fidus --setup
 ```
 
-Start Fidus:
+Then to use your terminal agent
 ```bash
 fidus
 ```
@@ -49,7 +49,7 @@ Once started, just type your request:
 > List all files modified today
 ```
 
-Or ask for code, explanations, or automation help:
+Or ask for script, explanations, or automation help:
 
 ```
 > How do I find and delete all .tmp files?
