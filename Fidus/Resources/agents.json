@@ -1,0 +1,12 @@
+[
+    {
+        "Name": "terminal",
+        "Description": null,
+        "Id": 0,
+        "InferenceProvider": null,
+        "ApiToken": null,
+        "ModelName": null,
+        "Temperature": 0.7,
+        "TopP": 0.9
+    }
+]
