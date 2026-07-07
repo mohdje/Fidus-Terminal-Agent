@@ -9,7 +9,7 @@ rm -rf ./publish/usr/
 mkdir -p ./publish/usr/bin/fidusCLI
 
 # Copy the built files to build/publish
-cp ../Fidus/bin/Release/net10.0/linux-x64/publish/* ./publish/usr/bin/fidusCLI/
+cp -r ../Fidus/bin/Release/net10.0/linux-x64/publish/* ./publish/usr/bin/fidusCLI/
 
 # Rename the main executable to "fidus"
 mv ./publish/usr/bin/fidusCLI/Fidus ./publish/usr/bin/fidusCLI/fidus
