@@ -1,6 +1,9 @@
-public class CommandArg(string[] names, Type valueType, string invalidMessage)
+using Fidus.Enums;
+
+public class CommandArg(string[] names, CommandArgId id, string description, string invalidMessage)
 {
     public string[] Names = names;
-    public Type ValueType = valueType;
+    public CommandArgId Id = id;
+    public string Description = description;
     public string InvalidMessage = invalidMessage;
 }

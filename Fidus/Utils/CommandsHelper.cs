@@ -1,120 +1,68 @@
-using Fidus;
-using ConsoleInk;
-public static class CommandArgsExtension
+using Fidus.Enums;
+
+namespace Fidus.Utils
 {
-    readonly static CommandArg[] ValidCommandArgs =
-    [
-        new CommandArg(["-i", "--inference-provider"], typeof(string), "Inference provider cannot be an empty string"),
-        new CommandArg(["-m", "--model"], typeof(string), "Model name cannot be an empty string"),
-        new CommandArg(["-a", "--apiToken"], typeof(string), "Api token cannot be an empty string"),
-        new CommandArg(["-t", "--temperature"], typeof(decimal), "Temperature must be a decimal value"),
-        new CommandArg(["-p", "--topP"], typeof(decimal), "TopP must be a decimal value"),
-    ];
-
-    public static bool HasReadOnlyArgs(this string[]? commandArgs)
+    public static class CommandArgsExtension
     {
-        if (commandArgs == null)
-            return false;
-
-        if (commandArgs.Any(arg => arg == "-h" || arg == "--help"))
+        public static CommandArg[] ValidCommandArgs =>
+        [
+            new CommandArg(["-a", "--agent-name"], CommandArgId.AgentName, "Specify an agent name to launch. If not specified, the default terminal agent will be used.", "Agent name cannot be an empty string"),
+            new CommandArg(["-as", "--agent-settings"], CommandArgId.AgentSettings, "Show settings for a specific agent. Specify an agent name with -a. If not specified, the default terminal agent will be used.", string.Empty),
+            new CommandArg(["-r", "--resume"], CommandArgId.Resume, "Resume previous agent session. Specify an agent name with -a. If not specified, the default terminal agent will be used.", string.Empty),
+            new CommandArg(["-s", "--setup"], CommandArgId.Setup, "Setup agent. Specify an agent name with -a. If not specified, the default terminal agent will be used.", string.Empty),
+            new CommandArg(["-rm", "--remove-agent"], CommandArgId.RemoveAgent, "Remove an existing agent. Specify an agent name with -a.", string.Empty),
+            new CommandArg(["-la", "--list-agents"], CommandArgId.ListAgents, "List all existing agents.", string.Empty),
+            new CommandArg(["-l", "--logs"], CommandArgId.Logs, "Show logs", string.Empty),
+            new CommandArg(["-h", "--help"], CommandArgId.Help, "Show help message", string.Empty),
+            new CommandArg(["-v", "--version"], CommandArgId.Version, "Show version information", string.Empty),
+        ];
+        public static string GetArgumentValue(this string[]? commandArgs, CommandArgId argumentId)
         {
-            ShowHelp();
-            return true;
+            if (commandArgs == null)
+                return null;
+
+            var arg = ValidCommandArgs.FirstOrDefault(a => a.Id == argumentId);
+            if (arg == null)
+                return null;
+
+            var index = GetArgumentIndex(commandArgs, argumentId);
+            if (index >= 0 && index < commandArgs.Length - 1)
+                return commandArgs[index + 1];
+
+            return null;
         }
-        if (commandArgs.Any(arg => arg == "-v" || arg == "--version"))
+
+        public static bool HasArgument(this string[]? commandArgs, CommandArgId argumentId)
         {
-            Console.WriteLine("Fidus CLI version 1.0.2");
-            return true;
+            if (commandArgs == null)
+                return false;
+
+            var arg = ValidCommandArgs.FirstOrDefault(a => a.Id == argumentId);
+            if (arg == null)
+                return false;
+
+            return GetArgumentIndex(commandArgs, argumentId) >= 0;
         }
-        if (commandArgs.Any(arg => arg == "-l" || arg == "--logs"))
+
+        private static int GetArgumentIndex(this string[]? commandArgs, CommandArgId argumentId)
         {
-            if (File.Exists("error.log"))
-            {
-                var logs = File.ReadAllText("error.log");
-                Console.WriteLine(logs);
-            }
-            else
-            {
-                Console.WriteLine("No logs found.");
-            }
-            return true;
+            if (commandArgs == null)
+                return -1;
+
+            var arg = ValidCommandArgs.FirstOrDefault(a => a.Id == argumentId);
+            if (arg == null)
+                return -1;
+
+            var index = commandArgs.Select((arg, i) => new { arg, i })
+                                .FirstOrDefault(x => arg.Names.Contains(x.arg))?.i ?? -1;
+
+            return index;
         }
-        return false;
-    }
-
-    public static bool HasValidCommandArgs(this string[]? commandArgs)
-    {
-        var validArgs = ValidCommandArgs.SelectMany(c => c.Names);
-        return commandArgs?.Any(arg => validArgs.Contains(arg)) == true;
-    }
-
-    private static void ShowHelp()
-    {
-        var helpText = @"# Fidus CLI Help
-
-Available command line options:
-
-- **-i, --inference-provider** `<string>`: Inference provider (e.g., huggingface, cerebras, google). Required.
-- **-m, --model** `<string>`: Model name to use. Required.
-- **-a, --apiToken** `<string>`: API token for authentication. Required.
-- **-t, --temperature** `<decimal>`: Sampling temperature (e.g., 0.7). Optional.
-- **-p, --topP** `<decimal>`: Nucleus sampling probability (e.g., 0.9). Optional.
-- **-h, --help**: Show this help message and exit.
-- **-v, --version**: Show the version of the application and exit.
-- **-s, --settings**: Show the current settings and exit.
-
-Examples:
-    fidus -i huggingface -m gpt2 -a <token>
-    fidus --inference-provider cerebras --model llama2 --apiToken <token> --temperature 0.7 --topP 0.9
-";
-        Console.WriteLine(MarkdownConsole.Render(helpText));
-    }
-
-    public static Settings ReadArgs(this string[] commandArgs)
-    {
-        var settings = new Settings();
-        for (int i = 0; i < ValidCommandArgs.Length; i++)
+        public static void ShowHelp()
         {
-            var arg = ValidCommandArgs[i];
-            if (commandArgs.Any(c => arg.Names.Contains(c)))
-            {
-                var index = arg.Names.Select(n => commandArgs.IndexOf(n)).First(i => i > -1);
-                var value = commandArgs.ElementAt(index + 1);
-                decimal decimalValue = 0;
+            var argumentList = ValidCommandArgs.Select(arg => $"{string.Join(", ", arg.Names)}: {arg.Description}").ToList();
 
-                if (string.IsNullOrEmpty(value))
-                    Console.WriteLine(arg.InvalidMessage);
-
-                if (arg.ValueType == typeof(decimal) && !decimal.TryParse(value, out decimalValue))
-                    Console.WriteLine(arg.InvalidMessage);
-
-                if (i == 0)
-                {
-                    settings.InferenceProvider = value;
-                    Console.WriteLine("Inference provider updated");
-                }
-                else if (i == 1)
-                {
-                    settings.ModelName = value;
-                    Console.WriteLine("Model name updated");
-                }
-                else if (i == 2)
-                {
-                    settings.ApiToken = value;
-                    Console.WriteLine("Api token updated");
-                }
-                else if (i == 3)
-                {
-                    settings.Temperature = decimalValue;
-                    Console.WriteLine("Temperature updated");
-                }
-                else if (i == 4)
-                {
-                    settings.TopP = decimalValue;
-                    Console.WriteLine("TopP updated");
-                }
-            }
+            Console.WriteLine(string.Join(Environment.NewLine, argumentList));
         }
-        return settings;
     }
 }

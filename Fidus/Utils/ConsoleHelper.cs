@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using ConsoleInk;
 
 namespace Fidus.Utils
@@ -6,6 +7,8 @@ namespace Fidus.Utils
     {
         bool loadingAnimationEnabled = false;
         int loadingRefreshRate = 200;
+        Stopwatch stopwatch = new Stopwatch();
+        string promptIndicator = "> ";
 
         CancellationTokenSource cancelAnimationTokenSource;
 
@@ -25,6 +28,9 @@ namespace Fidus.Utils
             {
                 await StopLoadingAnimationAsync();
             }
+
+            stopwatch.Reset();
+            stopwatch.Start();
 
             var thinkingAnimation = new string[] { "⣾", "⣷", "⣯", "⣟", "⣻", "⣽", "⣾" };
             int animationIndex = 0;
@@ -63,15 +69,21 @@ namespace Fidus.Utils
                 cancelAnimationTokenSource.Cancel();
 
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write(new string(' ', Console.WindowWidth));
-                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write(char.ConvertFromUtf32(0x00002705));
+                Console.CursorLeft = Console.BufferWidth + 1;
+                Console.Write(" ");
+
+                stopwatch.Stop();
+
+                Console.WriteLine($"{Ansi.FgBrightBlack}Done in {FormatTimeSpan(stopwatch.Elapsed)}{Ansi.Reset}");
+                Console.WriteLine();
+
                 Console.CursorVisible = true;
             }
         }
 
-        public string GetUserInput()
+        public string GetUserPrompt()
         {
-            var promptIndicator = "> ";
             var userInput = ReadLine.Read(promptIndicator);
 
             if (string.IsNullOrEmpty(userInput))
@@ -94,6 +106,76 @@ namespace Fidus.Utils
             Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{userInput}{Ansi.Reset}");
             return userInput;
         }
+
+        public int GetUserChoice(string prompt, string[] options, int? defaultChoiceIndex = null)
+        {
+            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{prompt}{Ansi.Reset}");
+            for (int i = 0; i < options.Length; i++)
+                Console.WriteLine($"[{i}] {options[i]}");
+
+            if (defaultChoiceIndex.HasValue && defaultChoiceIndex.Value >= 0 && defaultChoiceIndex.Value < options.Length)
+                Console.WriteLine($"{Ansi.Italic}{Ansi.FgBrightCyan}Press Enter to keep the default one: {options[defaultChoiceIndex.Value]}{Ansi.Reset}");
+
+            string? choiceIndex;
+            bool notValidIndex;
+            do
+            {
+                choiceIndex = ReadLine.Read(promptIndicator, defaultChoiceIndex.ToString());
+                notValidIndex = !int.TryParse(choiceIndex, out int index) || index < 0 || index >= options.Length;
+                if (notValidIndex)
+                    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Invalid index. Please choose a valid index from the list above.{Ansi.Reset}");
+
+            } while (notValidIndex);
+            return int.Parse(choiceIndex);
+        }
+
+        public string GetUserInput(string prompt, string defaultValue = "")
+        {
+            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{prompt}{Ansi.Reset}");
+            if (!string.IsNullOrEmpty(defaultValue))
+                Console.WriteLine($"{Ansi.Italic}{Ansi.FgBrightCyan}Press Enter to keep the default one: {defaultValue}{Ansi.Reset}");
+
+            var userInput = ReadLine.Read(promptIndicator, defaultValue);
+
+            if (string.IsNullOrEmpty(userInput))
+                return defaultValue;
+
+            return userInput;
+        }
+
+        public decimal GetUserInput(string prompt, decimal min, decimal max, decimal? defaultValue = null)
+        {
+            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{prompt}{Ansi.Reset}");
+            if (defaultValue.HasValue)
+                Console.WriteLine($"{Ansi.Italic}{Ansi.FgBrightCyan}Press Enter to keep the default one: {defaultValue.Value}{Ansi.Reset}");
+
+            bool valueNotValid;
+            decimal value;
+            do
+            {
+                var valueInput = ReadLine.Read(promptIndicator, defaultValue.HasValue ? defaultValue.Value.ToString() : string.Empty);
+                valueNotValid = !decimal.TryParse(valueInput, out value) || value < min || value > max;
+                if (valueNotValid)
+                    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Invalid value. Please enter a value between {min} and {max}.{Ansi.Reset}");
+            } while (valueNotValid);
+
+            return value;
+        }
+
+        private static string FormatTimeSpan(TimeSpan ts)
+        {
+            if (ts.TotalHours >= 1)
+                return ts.ToString(@"h\:mm\:ss") + " (h:min:sec)";
+
+            if (ts.TotalMinutes >= 1)
+                return ts.ToString(@"m\:ss") + "min";
+
+            if (ts.TotalSeconds < 1)
+                return $"{ts.TotalMilliseconds / 1000:F2}s";
+
+            return $"{(int)ts.TotalSeconds}sec";
+        }
+
     }
 }
 

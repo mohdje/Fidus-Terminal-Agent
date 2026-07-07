@@ -1,28 +1,32 @@
 ﻿using ConsoleInk;
 using Fidus.Utils;
 using Fidus.Agent;
+using Fidus.Enums;
+using PromptVit;
 
+Console.OutputEncoding = System.Text.Encoding.UTF8;
 var commandArgs = Environment.GetCommandLineArgs();
-var hasReadOnlyArgs = CommandArgsExtension.HasReadOnlyArgs(commandArgs);
-if (hasReadOnlyArgs)
+
+var consoleHelper = new ConsoleHelper();
+var appStart = new AppStart(consoleHelper);
+var agentSettings = await appStart.Initialize(commandArgs);
+
+if (agentSettings is null)
     return;
-var settings = SettingsManager.Init(commandArgs);
-if (commandArgs.Any(arg => arg == "-s" || arg == "--settings"))
-{
-    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightYellow}Current settings:{Ansi.Reset}");
-    Console.WriteLine($"Inference Provider: {settings.InferenceProvider}");
-    Console.WriteLine($"Model Name: {settings.ModelName}");
-    Console.WriteLine($"API Token: {settings.ApiToken[..4]}****{settings.ApiToken[^4..]}");
-    Console.WriteLine($"Temperature: {settings.Temperature}");
-    Console.WriteLine($"TopP: {settings.TopP}");
-    return;
-}
 
 Agent agent;
-var consoleDrawer = new ConsoleHelper();
+var loadHistory = commandArgs.HasArgument(CommandArgId.Resume);
+var tools = new List<IAITool>
+{
+    new BashCommandTool(consoleHelper),
+    new EditFileTool(consoleHelper),
+    new ReadFileTool(consoleHelper),
+    new InternetSearchTool(consoleHelper)
+};
+
 try
 {
-    agent = new Agent(settings, consoleDrawer);
+    agent = await Agent.CreateAsync(agentSettings, loadHistory, tools);
 }
 catch (Exception ex)
 {
@@ -31,7 +35,7 @@ catch (Exception ex)
 }
 
 if (agent is not null)
-    await Start(agent, consoleDrawer);
+    await Start(agent, consoleHelper);
 
 
 static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
@@ -42,14 +46,14 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
 
     Console.WriteLine();
     Console.WriteLine($"{Ansi.Bold}{Ansi.FgMagenta}          FIDUS{Ansi.Reset}");
-    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}     Your AI assistant{Ansi.Reset}");
+    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}     Your {aiAgent.Name} assistant{Ansi.Reset}");
 
     Console.WriteLine();
     Console.WriteLine($"{Ansi.Bold}{Ansi.FgWhite} Hello {Ansi.Bold}{Ansi.FgCyan}{Environment.UserName}{Ansi.Reset}{Ansi.Bold}{Ansi.FgWhite}, what can I do for you ? {Ansi.Reset}");
 
     while (true)
     {
-        var userInput = consoleHelper.GetUserInput();
+        var userInput = consoleHelper.GetUserPrompt();
         if (string.IsNullOrEmpty(userInput))
             break;
 
@@ -68,7 +72,7 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
         catch (Exception ex)
         {
             await consoleHelper.StopLoadingAnimationAsync();
-            File.AppendAllText("error.log", $"[{DateTime.Now}] Error: {ex.Message}{Environment.NewLine}");
+            File.AppendAllText(AppFiles.ErrorLogsFilePath, $"[{DateTime.Now}] Error: {ex.Message}{Environment.NewLine}");
             Console.WriteLine();
             Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Something went wrong, please try again. Read logs with -l or --logs for details.{Ansi.Reset}");
 
@@ -76,6 +80,4 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper)
         }
     }
 }
-
-
 
