@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using ConsoleInk;
+using Spectre.Console;
 
 namespace Fidus.Utils
 {
@@ -14,12 +14,12 @@ namespace Fidus.Utils
 
         public void DrawLogo()
         {
-            var eye = $"{Ansi.FgWhite}{"◠"}{Ansi.Reset}";
-            var mouth = $"{Ansi.FgWhite}{"◡"}{Ansi.Reset}";
-            Console.WriteLine($"        {Ansi.FgMagenta}{"╭───────╮"}{Ansi.Reset}");
-            Console.WriteLine($"        {Ansi.FgMagenta}{"│"}{Ansi.Reset}  {eye} {eye}  {Ansi.FgMagenta}{"│"}{Ansi.Reset}");
-            Console.WriteLine($"        {Ansi.FgMagenta}{"│"}{Ansi.Reset}   {mouth}   {Ansi.FgMagenta}{"│"}{Ansi.Reset}");
-            Console.WriteLine($"        {Ansi.FgMagenta}{"╰───────╯"}{Ansi.Reset}");
+            var eye = "[white]◠[/]";
+            var mouth = "[white]◡[/]";
+            AnsiConsole.MarkupLine($"        [magenta]╭───────╮[/]");
+            AnsiConsole.MarkupLine($"        [magenta]│[/]  {eye} {eye}  [magenta]│[/]");
+            AnsiConsole.MarkupLine($"        [magenta]│[/]   {mouth}   [magenta]│[/]");
+            AnsiConsole.MarkupLine($"        [magenta]╰───────╯[/]");
         }
 
         public async Task StartLoadingAnimationAsync(string message, string subMessage = "")
@@ -42,13 +42,13 @@ namespace Fidus.Utils
             var subMessageLength = 50;
             var displaySubmessage = subMessage.Length >= subMessageLength ? $"{subMessage[..subMessageLength]}..." : $"{subMessage}";
 
-            Console.Write($"{Ansi.FgCyan}{thinkingAnimation[animationIndex]}{Ansi.Reset} {Ansi.Bold}{Ansi.FgCyan}{message}{Ansi.Reset} {Ansi.Bold}{Ansi.FgBrightBlack}{displaySubmessage}{Ansi.Reset}");
+            Console.Write($"[cyan]{thinkingAnimation[animationIndex]}[/] [bold cyan]{message}[/] [bold brightblack]{displaySubmessage}[/]");
 
             cancelAnimationTokenSource = new CancellationTokenSource();
             while (loadingAnimationEnabled && !cancelAnimationTokenSource.Token.IsCancellationRequested)
             {
                 Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write($"{Ansi.FgCyan}{thinkingAnimation[animationIndex]}{Ansi.Reset} ");
+                Console.Write($"[cyan]{thinkingAnimation[animationIndex]}[/] ");
                 animationIndex = animationIndex == thinkingAnimation.Length - 1 ? 0 : animationIndex + 1;
                 try
                 {
@@ -57,6 +57,10 @@ namespace Fidus.Utils
                 catch (TaskCanceledException)
                 {
                     break;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
                 }
             }
         }
@@ -67,18 +71,24 @@ namespace Fidus.Utils
             {
                 loadingAnimationEnabled = false;
                 cancelAnimationTokenSource.Cancel();
+                try
+                {
+                    Console.SetCursorPosition(0, Console.CursorTop);
+                    Console.Write(char.ConvertFromUtf32(0x00002705));
+                    Console.CursorLeft = Console.BufferWidth + 1;
+                    Console.Write(" ");
 
-                Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write(char.ConvertFromUtf32(0x00002705));
-                Console.CursorLeft = Console.BufferWidth + 1;
-                Console.Write(" ");
+                    stopwatch.Stop();
 
-                stopwatch.Stop();
+                    AnsiConsole.MarkupLine($"[brightblack]Done in {FormatTimeSpan(stopwatch.Elapsed)}[/]");
+                    Console.WriteLine();
 
-                Console.WriteLine($"{Ansi.FgBrightBlack}Done in {FormatTimeSpan(stopwatch.Elapsed)}{Ansi.Reset}");
-                Console.WriteLine();
-
-                Console.CursorVisible = true;
+                    Console.CursorVisible = true;
+                }
+                catch (System.Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
 
@@ -103,18 +113,18 @@ namespace Fidus.Utils
             }
 
             Console.SetCursorPosition(0, currentCursorTop - linesSpanned);
-            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{userInput}{Ansi.Reset}");
+            AnsiConsole.MarkupLine($"[bold brightmagenta]{userInput}[/]");
             return userInput;
         }
 
         public int GetUserChoice(string prompt, string[] options, int? defaultChoiceIndex = null)
         {
-            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{prompt}{Ansi.Reset}");
+            AnsiConsole.MarkupLine($"[bold brightmagenta]{prompt}[/]");
             for (int i = 0; i < options.Length; i++)
-                Console.WriteLine($"[{i}] {options[i]}");
+                AnsiConsole.MarkupLine($"[{i}] {options[i]}");
 
             if (defaultChoiceIndex.HasValue && defaultChoiceIndex.Value >= 0 && defaultChoiceIndex.Value < options.Length)
-                Console.WriteLine($"{Ansi.Italic}{Ansi.FgBrightCyan}Press Enter to keep the default one: {options[defaultChoiceIndex.Value]}{Ansi.Reset}");
+                AnsiConsole.MarkupLine($"[italic brightcyan]Press Enter to keep the default one: {options[defaultChoiceIndex.Value]}[/]");
 
             string? choiceIndex;
             bool notValidIndex;
@@ -123,7 +133,7 @@ namespace Fidus.Utils
                 choiceIndex = ReadLine.Read(promptIndicator, defaultChoiceIndex.ToString());
                 notValidIndex = !int.TryParse(choiceIndex, out int index) || index < 0 || index >= options.Length;
                 if (notValidIndex)
-                    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Invalid index. Please choose a valid index from the list above.{Ansi.Reset}");
+                    AnsiConsole.MarkupLine($"[bold brightred]Invalid index. Please choose a valid index from the list above.[/]");
 
             } while (notValidIndex);
             return int.Parse(choiceIndex);
@@ -131,9 +141,9 @@ namespace Fidus.Utils
 
         public string GetUserInput(string prompt, string defaultValue = "")
         {
-            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{prompt}{Ansi.Reset}");
+            AnsiConsole.MarkupLine($"[bold brightmagenta]{prompt}[/]");
             if (!string.IsNullOrEmpty(defaultValue))
-                Console.WriteLine($"{Ansi.Italic}{Ansi.FgBrightCyan}Press Enter to keep the default one: {defaultValue}{Ansi.Reset}");
+                AnsiConsole.MarkupLine($"[italic brightcyan]Press Enter to keep the default one: {defaultValue}[/]");
 
             var userInput = ReadLine.Read(promptIndicator, defaultValue);
 
@@ -145,9 +155,9 @@ namespace Fidus.Utils
 
         public decimal GetUserInput(string prompt, decimal min, decimal max, decimal? defaultValue = null)
         {
-            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightMagenta}{prompt}{Ansi.Reset}");
+            AnsiConsole.MarkupLine($"[bold brightmagenta]{prompt}[/]");
             if (defaultValue.HasValue)
-                Console.WriteLine($"{Ansi.Italic}{Ansi.FgBrightCyan}Press Enter to keep the default one: {defaultValue.Value}{Ansi.Reset}");
+                AnsiConsole.MarkupLine($"[italic brightcyan]Press Enter to keep the default one: {defaultValue.Value}[/]");
 
             bool valueNotValid;
             decimal value;
@@ -156,7 +166,7 @@ namespace Fidus.Utils
                 var valueInput = ReadLine.Read(promptIndicator, defaultValue.HasValue ? defaultValue.Value.ToString() : string.Empty);
                 valueNotValid = !decimal.TryParse(valueInput, out value) || value < min || value > max;
                 if (valueNotValid)
-                    Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightRed}Invalid value. Please enter a value between {min} and {max}.{Ansi.Reset}");
+                    AnsiConsole.MarkupLine($"[bold brightred]Invalid value. Please enter a value between {min} and {max}.[/]");
             } while (valueNotValid);
 
             return value;
@@ -178,4 +188,3 @@ namespace Fidus.Utils
 
     }
 }
-
