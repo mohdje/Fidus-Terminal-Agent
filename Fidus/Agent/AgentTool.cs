@@ -20,7 +20,9 @@ namespace Fidus.Agent
         public Task<string> ExecuteToolAsync(string jsonParameters)
         {
             var parameters = DeserializeParameters<T>(jsonParameters);
-            return ExecuteToolAsync(parameters);
+            var result = ExecuteToolAsync(parameters);
+            _consoleDrawer.StartLoadingAnimationAsync("Thinking...");
+            return result;
         }
 
         protected abstract Task<string> ExecuteToolAsync(T parameters);

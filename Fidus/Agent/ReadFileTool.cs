@@ -16,7 +16,7 @@ namespace Fidus.Agent
 
         protected override async Task<string> ExecuteToolAsync(ReadFileParameters parameters)
         {
-            consoleDrawer.StartLoadingAnimationAsync($"Reading file: {parameters.FilePath}");
+            consoleDrawer.StartLoadingAnimationAsync($"Reading file", parameters.FilePath);
 
             if (string.IsNullOrEmpty(parameters.FilePath))
                 return "File path is required.";
