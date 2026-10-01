@@ -1,4 +1,5 @@
 using ConsoleInk;
+using System.Diagnostics;
 using Fidus.Enums;
 using Fidus.Models;
 
@@ -19,7 +20,7 @@ namespace Fidus.Utils
             }
             else if (commandArgs.HasArgument(CommandArgId.Version))
             {
-                Console.WriteLine($"FIDUS version: 2.0.0");
+                Console.WriteLine($"FIDUS version: 2.0.1");
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.Logs))
@@ -99,6 +100,35 @@ namespace Fidus.Utils
                 await SetupAgentSettingsAsync(agentSettings, consoleHelper);
                 agentsSettingsManager.SaveSettings();
                 Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightGreen}{agentSettings.Name}{Ansi.Reset} {Ansi.Bold}{Ansi.FgBlue}agent saved successfully{Ansi.Reset}");
+
+                Console.WriteLine($"You can read/edit the system prompt of {Ansi.Bold}{Ansi.FgBrightGreen}{agentSettings.Name}{Ansi.Reset} agent with the command {Ansi.Bold}{Ansi.FgBrightMagenta}fidus -sp -a {agentSettings.Name}{Ansi.Reset}");
+
+                return null;
+            }
+            else if (commandArgs.HasArgument(CommandArgId.SystemPrompt))
+            {
+                if (agentName == "terminal")
+                    Console.WriteLine("The default terminal agent's system prompt cannot be modified.");
+                else if (agentSettings is null)
+                    Console.WriteLine($"{agentName} agent not found. Please check your settings.");
+                else
+                {
+                    var systemPromptFilePath = AppFiles.GetSystemPromptFile(agentSettings.Id);
+                    if (!File.Exists(systemPromptFilePath))
+                        Console.WriteLine($"System prompt file for agent '{agentSettings.Name}' was not found.");
+                    else
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo(systemPromptFilePath) { UseShellExecute = true });
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Could not open the system prompt file: {ex.Message}");
+                        }
+                    }
+                }
+
                 return null;
             }
             else if (agentSettings is null)

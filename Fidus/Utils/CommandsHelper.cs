@@ -1,3 +1,4 @@
+using ConsoleInk;
 using Fidus.Enums;
 
 namespace Fidus.Utils
@@ -10,6 +11,7 @@ namespace Fidus.Utils
             new CommandArg(["-as", "--agent-settings"], CommandArgId.AgentSettings, "Show settings for a specific agent. Specify an agent name with -a. If not specified, the default terminal agent will be used.", string.Empty),
             new CommandArg(["-r", "--resume"], CommandArgId.Resume, "Resume previous agent session. Specify an agent name with -a. If not specified, the default terminal agent will be used.", string.Empty),
             new CommandArg(["-s", "--setup"], CommandArgId.Setup, "Setup agent. Specify an agent name with -a. If not specified, the default terminal agent will be used.", string.Empty),
+            new CommandArg(["-sp", "--system-prompt"], CommandArgId.SystemPrompt, "Open the system prompt for an agent. Specify an agent name with -a.", string.Empty),
             new CommandArg(["-rm", "--remove-agent"], CommandArgId.RemoveAgent, "Remove an existing agent. Specify an agent name with -a.", string.Empty),
             new CommandArg(["-la", "--list-agents"], CommandArgId.ListAgents, "List all existing agents.", string.Empty),
             new CommandArg(["-l", "--logs"], CommandArgId.Logs, "Show logs", string.Empty),
@@ -60,7 +62,7 @@ namespace Fidus.Utils
         }
         public static void ShowHelp()
         {
-            var argumentList = ValidCommandArgs.Select(arg => $"{string.Join(", ", arg.Names)}: {arg.Description}").ToList();
+            var argumentList = ValidCommandArgs.Select(arg => $"{Ansi.FgBrightMagenta}{Ansi.Bold}{string.Join(" ", arg.Names)}{Ansi.Reset}: {arg.Description}").ToList();
 
             Console.WriteLine(string.Join(Environment.NewLine, argumentList));
         }

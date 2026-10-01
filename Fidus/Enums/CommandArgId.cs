@@ -10,6 +10,7 @@ namespace Fidus.Enums
         Setup,
         RemoveAgent,
         ListAgents,
-        AgentSettings
+        AgentSettings,
+        SystemPrompt
     }
 }
