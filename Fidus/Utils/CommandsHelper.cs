@@ -65,7 +65,7 @@ namespace Fidus.Utils
         public static void ShowHelp()
         {
             var table = new Table().Border(TableBorder.Rounded).Title("[bold]FIDUS command line options[/]");
-            table.AddColumn(new TableColumn("Command").Centered());
+            table.AddColumn(new TableColumn("Command"));
             table.AddColumn(new TableColumn("Description"));
 
             foreach (var arg in ValidCommandArgs)

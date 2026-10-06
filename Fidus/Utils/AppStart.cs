@@ -11,7 +11,6 @@ namespace Fidus.Utils
 
         public async Task<AgentSettings?> Initialize(string[] commandArgs)
         {
-            var agentName = commandArgs.GetArgumentValue(CommandArgId.AgentName) ?? "terminal";
 
             if (commandArgs.HasArgument(CommandArgId.Help))
             {
@@ -39,6 +38,8 @@ namespace Fidus.Utils
                 return null;
             }
 
+            var agentName = commandArgs.GetArgumentValue(CommandArgId.AgentName) ?? "terminal";
+
             var agentsSettingsManager = new AgentsSettingsManager();
             var agentSettings = agentsSettingsManager.GetAgentSettings(agentName);
 
@@ -51,12 +52,9 @@ namespace Fidus.Utils
                 }
                 else
                 {
-                    var table = new Table().Border(TableBorder.Rounded).Title("[bold]Existing agents[/]");
-                    table.AddColumn("Agent");
+                    AnsiConsole.MarkupLine("[bold cyan]Existing agents:[/]");
                     foreach (var name in agentsNames)
-                        table.AddRow(name);
-
-                    AnsiConsole.Write(table);
+                        AnsiConsole.MarkupLine(name);
                 }
 
                 return null;
@@ -95,7 +93,7 @@ namespace Fidus.Utils
                 }
                 else
                 {
-                    var table = new Table().Border(TableBorder.Simple).AddColumn("Setting").AddColumn("Value");
+                    var table = new Table().Border(TableBorder.Rounded).AddColumn("Setting").AddColumn("Value");
                     table.AddRow("Name", agentSettings.Name);
                     table.AddRow("Inference Provider", agentSettings.InferenceProvider?.ToString() ?? "not set");
                     table.AddRow("Model Name", agentSettings.ModelName ?? "not set");
@@ -113,7 +111,7 @@ namespace Fidus.Utils
                 await SetupAgentSettingsAsync(agentSettings, consoleHelper);
                 agentsSettingsManager.SaveSettings();
                 AnsiConsole.MarkupLine($"[bold green]{Markup.Escape(agentSettings.Name)} agent saved successfully.[/]");
-                AnsiConsole.MarkupLine($"You can read/edit the system prompt of [bold]{Markup.Escape(agentSettings.Name)}[/] agent with the command [bold]fidus -sp -a {Markup.Escape(agentSettings.Name)}[/]");
+                AnsiConsole.MarkupLine($"You can read/edit the system prompt of [bold]{Markup.Escape(agentSettings.Name)}[/] agent with the command [bold cyan]fidus -sp -a {Markup.Escape(agentSettings.Name)}[/]");
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.SystemPrompt))
