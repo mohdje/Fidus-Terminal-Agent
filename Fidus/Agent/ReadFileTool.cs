@@ -14,10 +14,15 @@ namespace Fidus.Agent
                 new AIToolParameter("filePath", "The path to the file to read.", "string"),
             ];
 
+        public override string StatusMessage => "Read File";
+
+        protected override string StatusSubMessage(ReadFileParameters parameters)
+        {
+            return parameters.FilePath;
+        }
+
         protected override async Task<string> ExecuteToolAsync(ReadFileParameters parameters)
         {
-            consoleDrawer.StartLoadingAnimationAsync($"Reading file", parameters.FilePath);
-
             if (string.IsNullOrEmpty(parameters.FilePath))
                 return "File path is required.";
 
@@ -33,10 +38,7 @@ namespace Fidus.Agent
             {
                 return $"Error reading file '{parameters.FilePath}': {ex.Message}";
             }
-            finally
-            {
-                await consoleDrawer.StopLoadingAnimationAsync();
-            }
         }
+
     }
 }

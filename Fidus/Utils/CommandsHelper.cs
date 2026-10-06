@@ -1,4 +1,4 @@
-using ConsoleInk;
+using Spectre.Console;
 using Fidus.Enums;
 
 namespace Fidus.Utils
@@ -18,6 +18,7 @@ namespace Fidus.Utils
             new CommandArg(["-h", "--help"], CommandArgId.Help, "Show help message", string.Empty),
             new CommandArg(["-v", "--version"], CommandArgId.Version, "Show version information", string.Empty),
         ];
+
         public static string GetArgumentValue(this string[]? commandArgs, CommandArgId argumentId)
         {
             if (commandArgs == null)
@@ -56,15 +57,21 @@ namespace Fidus.Utils
                 return -1;
 
             var index = commandArgs.Select((arg, i) => new { arg, i })
-                                .FirstOrDefault(x => arg.Names.Contains(x.arg))?.i ?? -1;
+                .FirstOrDefault(x => arg.Names.Contains(x.arg))?.i ?? -1;
 
             return index;
         }
+
         public static void ShowHelp()
         {
-            var argumentList = ValidCommandArgs.Select(arg => $"{Ansi.FgBrightMagenta}{Ansi.Bold}{string.Join(" ", arg.Names)}{Ansi.Reset}: {arg.Description}").ToList();
+            var table = new Table().Border(TableBorder.Rounded).Title("[bold]FIDUS command line options[/]");
+            table.AddColumn(new TableColumn("Command").Centered());
+            table.AddColumn(new TableColumn("Description"));
 
-            Console.WriteLine(string.Join(Environment.NewLine, argumentList));
+            foreach (var arg in ValidCommandArgs)
+                table.AddRow(string.Join(" ", arg.Names), arg.Description);
+
+            AnsiConsole.Write(table);
         }
     }
 }

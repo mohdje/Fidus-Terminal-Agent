@@ -1,5 +1,5 @@
-using ConsoleInk;
 using System.Diagnostics;
+using Spectre.Console;
 using Fidus.Enums;
 using Fidus.Models;
 
@@ -9,7 +9,7 @@ namespace Fidus.Utils
     {
         readonly ConsoleHelper consoleHelper = consoleHelper;
 
-        public async Task<AgentSettings> Initialize(string[] commandArgs)
+        public async Task<AgentSettings?> Initialize(string[] commandArgs)
         {
             var agentName = commandArgs.GetArgumentValue(CommandArgId.AgentName) ?? "terminal";
 
@@ -20,7 +20,7 @@ namespace Fidus.Utils
             }
             else if (commandArgs.HasArgument(CommandArgId.Version))
             {
-                Console.WriteLine($"FIDUS version: 2.0.1");
+                AnsiConsole.MarkupLine("[bold]FIDUS version: 2.0.1[/]");
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.Logs))
@@ -28,26 +28,35 @@ namespace Fidus.Utils
                 if (File.Exists(AppFiles.ErrorLogsFilePath))
                 {
                     var logs = File.ReadAllText(AppFiles.ErrorLogsFilePath);
-                    Console.WriteLine(logs);
+                    AnsiConsole.Write(new Text(logs));
+                    AnsiConsole.WriteLine();
                 }
                 else
-                    Console.WriteLine("No logs found.");
+                {
+                    AnsiConsole.MarkupLine("[italic]No logs found.[/]");
+                }
 
                 return null;
             }
 
             var agentsSettingsManager = new AgentsSettingsManager();
             var agentSettings = agentsSettingsManager.GetAgentSettings(agentName);
+
             if (commandArgs.HasArgument(CommandArgId.ListAgents))
             {
                 var agentsNames = agentsSettingsManager.GetAllAgentNames();
                 if (agentsNames.Length == 0)
-                    Console.WriteLine("No agents found.");
+                {
+                    AnsiConsole.MarkupLine("[italic]No agents found.[/]");
+                }
                 else
                 {
-                    Console.WriteLine("Existing agents:");
+                    var table = new Table().Border(TableBorder.Rounded).Title("[bold]Existing agents[/]");
+                    table.AddColumn("Agent");
                     foreach (var name in agentsNames)
-                        Console.WriteLine($"- {name}");
+                        table.AddRow(name);
+
+                    AnsiConsole.Write(table);
                 }
 
                 return null;
@@ -57,39 +66,43 @@ namespace Fidus.Utils
                 var agentNameToRemove = commandArgs.GetArgumentValue(CommandArgId.AgentName);
                 if (string.IsNullOrEmpty(agentNameToRemove))
                 {
-                    Console.WriteLine("Please specify an agent name to remove using -a or --agent-name.");
+                    AnsiConsole.MarkupLine("[red]Please specify an agent name to remove using -a or --agent-name.[/]");
                     return null;
                 }
                 else if (agentNameToRemove == "terminal")
                 {
-                    Console.WriteLine("The default terminal agent cannot be removed.");
+                    AnsiConsole.MarkupLine("[red]The default terminal agent cannot be removed.[/]");
                     return null;
                 }
 
                 var agentSettingsToRemove = agentsSettingsManager.GetAgentSettings(agentNameToRemove);
                 if (agentSettingsToRemove is null)
                 {
-                    Console.WriteLine($"Agent '{agentNameToRemove}' not found.");
+                    AnsiConsole.MarkupLine($"[red]Agent '{Markup.Escape(agentNameToRemove)}' not found.[/]");
                     return null;
                 }
 
                 agentsSettingsManager.RemoveAgentSettings(agentSettingsToRemove.Name);
                 agentsSettingsManager.SaveSettings();
-                Console.WriteLine($"Agent '{agentNameToRemove}' removed successfully.");
+                AnsiConsole.MarkupLine($"[green]Agent '{Markup.Escape(agentNameToRemove)}' removed successfully.[/]");
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.AgentSettings))
             {
                 if (agentSettings is null)
-                    Console.WriteLine($"{agentName} agent not found. Please check your settings.");
+                {
+                    AnsiConsole.MarkupLine($"[red]{Markup.Escape(agentName)} agent not found. Please check your settings.[/]");
+                }
                 else
                 {
-                    Console.WriteLine($"Settings for agent '{agentSettings.Name}':");
-                    Console.WriteLine($"- Inference Provider: {agentSettings.InferenceProvider}");
-                    Console.WriteLine($"- Model Name: {agentSettings.ModelName}");
-                    Console.WriteLine($"- API Token: {agentSettings.ApiToken[..4]}****{agentSettings.ApiToken[^4..]}");
-                    Console.WriteLine($"- Temperature: {agentSettings.Temperature}");
-                    Console.WriteLine($"- TopP: {agentSettings.TopP}");
+                    var table = new Table().Border(TableBorder.Simple).AddColumn("Setting").AddColumn("Value");
+                    table.AddRow("Name", agentSettings.Name);
+                    table.AddRow("Inference Provider", agentSettings.InferenceProvider?.ToString() ?? "not set");
+                    table.AddRow("Model Name", agentSettings.ModelName ?? "not set");
+                    table.AddRow("API Token", agentSettings.MaskedApiToken ?? "not set");
+                    table.AddRow("Temperature", agentSettings.Temperature?.ToString() ?? "not set");
+                    table.AddRow("TopP", agentSettings.TopP?.ToString() ?? "not set");
+                    AnsiConsole.Write(table);
                 }
 
                 return null;
@@ -99,23 +112,27 @@ namespace Fidus.Utils
                 agentSettings ??= agentsSettingsManager.CreateAgentSettings(agentName);
                 await SetupAgentSettingsAsync(agentSettings, consoleHelper);
                 agentsSettingsManager.SaveSettings();
-                Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightGreen}{agentSettings.Name}{Ansi.Reset} {Ansi.Bold}{Ansi.FgBlue}agent saved successfully{Ansi.Reset}");
-
-                Console.WriteLine($"You can read/edit the system prompt of {Ansi.Bold}{Ansi.FgBrightGreen}{agentSettings.Name}{Ansi.Reset} agent with the command {Ansi.Bold}{Ansi.FgBrightMagenta}fidus -sp -a {agentSettings.Name}{Ansi.Reset}");
-
+                AnsiConsole.MarkupLine($"[bold green]{Markup.Escape(agentSettings.Name)} agent saved successfully.[/]");
+                AnsiConsole.MarkupLine($"You can read/edit the system prompt of [bold]{Markup.Escape(agentSettings.Name)}[/] agent with the command [bold]fidus -sp -a {Markup.Escape(agentSettings.Name)}[/]");
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.SystemPrompt))
             {
                 if (agentName == "terminal")
-                    Console.WriteLine("The default terminal agent's system prompt cannot be modified.");
+                {
+                    AnsiConsole.MarkupLine("[red]The default terminal agent's system prompt cannot be modified.[/]");
+                }
                 else if (agentSettings is null)
-                    Console.WriteLine($"{agentName} agent not found. Please check your settings.");
+                {
+                    AnsiConsole.MarkupLine($"[red]{Markup.Escape(agentName)} agent not found. Please check your settings.[/]");
+                }
                 else
                 {
                     var systemPromptFilePath = AppFiles.GetSystemPromptFile(agentSettings.Id);
                     if (!File.Exists(systemPromptFilePath))
-                        Console.WriteLine($"System prompt file for agent '{agentSettings.Name}' was not found.");
+                    {
+                        AnsiConsole.MarkupLine($"[red]System prompt file for agent '{Markup.Escape(agentSettings.Name)}' was not found.[/]");
+                    }
                     else
                     {
                         try
@@ -124,7 +141,7 @@ namespace Fidus.Utils
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Could not open the system prompt file: {ex.Message}");
+                            AnsiConsole.WriteLine($"Could not open the system prompt file: {ex.Message}");
                         }
                     }
                 }
@@ -133,7 +150,7 @@ namespace Fidus.Utils
             }
             else if (agentSettings is null)
             {
-                Console.WriteLine($"{agentName} agent not found. Please check your settings.");
+                AnsiConsole.MarkupLine($"[red]{Markup.Escape(agentName)} agent not found. Please check your settings.[/]");
                 return null;
             }
 
@@ -142,38 +159,58 @@ namespace Fidus.Utils
 
         static async Task SetupAgentSettingsAsync(AgentSettings agentSettings, ConsoleHelper consoleHelper)
         {
-            Console.WriteLine($"{Ansi.Bold}{Ansi.FgBrightBlue}Let's set up {Ansi.Reset}{Ansi.Bold}{Ansi.FgBrightGreen}{agentSettings.Name} {Ansi.Bold}{Ansi.FgBrightBlue}agent{Ansi.Reset}");
-            Console.WriteLine();
+            AnsiConsole.MarkupLine($"[bold blue]Let's set up {Markup.Escape(agentSettings.Name)} agent[/]");
+            AnsiConsole.WriteLine();
 
             var inferenceProviders = Enum.GetNames<InferenceProvider>();
-            var inferenceProviderIndex = consoleHelper.GetUserChoice($"What inference provider do you want to use ? (choose an index from the list below)", inferenceProviders, agentSettings.InferenceProvider.HasValue ? (int)agentSettings.InferenceProvider.Value : null);
+            if (agentSettings.InferenceProvider.HasValue)
+                inferenceProviders[(int)agentSettings.InferenceProvider.Value] += " (current)";
+
+            var inferenceProviderIndex = consoleHelper.GetUserChoice(
+                "What inference provider do you want to use ?",
+                inferenceProviders);
+
             agentSettings.InferenceProvider = (InferenceProvider)inferenceProviderIndex;
+            var selectedInferenceProviderName = agentSettings.InferenceProvider.ToString();
 
-            Console.WriteLine();
+            AnsiConsole.WriteLine();
 
-            agentSettings.ApiToken = consoleHelper.GetUserInput($"Enter your api key for {inferenceProviders[inferenceProviderIndex]}:", agentSettings.ApiToken);
+            var apiToken = consoleHelper.GetSecretInput(
+                $"Enter your API key for {selectedInferenceProviderName} (press Enter to keep the existing value):",
+                agentSettings.ApiToken ?? string.Empty);
 
-            Console.WriteLine();
+            if (!string.IsNullOrEmpty(apiToken) && !string.Equals(apiToken, agentSettings.ApiToken, StringComparison.Ordinal))
+                agentSettings.ApiToken = apiToken;
 
-            agentSettings.ModelName = consoleHelper.GetUserInput($"Enter the model name to use for {inferenceProviders[inferenceProviderIndex]}:", agentSettings.ModelName);
+            AnsiConsole.WriteLine();
 
-            Console.WriteLine();
+            agentSettings.ModelName = consoleHelper.GetUserInput(
+                $"Enter the model name to use for {selectedInferenceProviderName}:",
+                agentSettings.ModelName);
 
-            agentSettings.Temperature = consoleHelper.GetUserInput($"Enter the temperature to use for {agentSettings.ModelName} model (value between 0 and 2)", 0, 2, agentSettings.Temperature);
+            AnsiConsole.WriteLine();
 
-            Console.WriteLine();
+            agentSettings.Temperature = consoleHelper.GetUserDecimal(
+                $"Enter the temperature to use for {agentSettings.ModelName} model (value between 0 and 2)",
+                0, 2, agentSettings.Temperature);
 
-            agentSettings.TopP = consoleHelper.GetUserInput($"Enter the top-p value to use for {agentSettings.ModelName} model (value between 0 and 1)", 0, 1, agentSettings.TopP);
+            AnsiConsole.WriteLine();
 
-            Console.WriteLine();
+            agentSettings.TopP = consoleHelper.GetUserDecimal(
+                $"Enter the top-p value to use for {agentSettings.ModelName} model (value between 0 and 1)",
+                0, 1, agentSettings.TopP);
+
+            AnsiConsole.WriteLine();
 
             if (agentSettings.Id != 0)
             {
-                var description = consoleHelper.GetUserInput($"Describe the task {agentSettings.Name} agent is designed to perform:", agentSettings.Description);
+                var description = consoleHelper.GetUserInput(
+                    $"Describe the task {agentSettings.Name} agent is designed to perform:",
+                    agentSettings.Description);
 
                 if (description != agentSettings.Description && !string.IsNullOrEmpty(description))
                 {
-                    Console.WriteLine();
+                    AnsiConsole.WriteLine();
                     agentSettings.Description = description;
 
                     var aiClient = await Agent.Agent.CreateAsync(agentSettings);
@@ -181,12 +218,19 @@ namespace Fidus.Utils
             Agent should also be able to answer questions about its work and questions relative to its domain of expertise. The agent shall not answer questions that are not related to its purpose.
             No reasoning, no explanation, just the system prompt in a markdown format. Do not include any additional text. ";
 
-                    consoleHelper.StartLoadingAnimationAsync("Creating agent");
-                    var response = await aiClient.Invoke(prompt);
-                    await consoleHelper.StopLoadingAnimationAsync();
+                    try
+                    {
+                        var response = await consoleHelper.RunWithStatusAsync(
+                            "Creating agent",
+                            async () => await aiClient.Invoke(prompt));
 
-                    var systemPromptFilePath = AppFiles.GetSystemPromptFile(agentSettings.Id);
-                    await File.WriteAllTextAsync(systemPromptFilePath, response);
+                        var systemPromptFilePath = AppFiles.GetSystemPromptFile(agentSettings.Id);
+                        await File.WriteAllTextAsync(systemPromptFilePath, response);
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.WriteLine($"Failed to generate the system prompt: {ex.Message}");
+                    }
                 }
             }
         }

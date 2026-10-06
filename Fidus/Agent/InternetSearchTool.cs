@@ -17,6 +17,13 @@ namespace Fidus.Agent
                 new AIToolParameter("query", "The search query to perform on the internet (example: 'What is weather today in Paris?').", "string"),
             ];
 
+        public override string StatusMessage => "Internet Search";
+
+        protected override string StatusSubMessage(InternetSearchParameters parameters)
+        {
+            return parameters.Query;
+        }
+
         public InternetSearchTool(ConsoleHelper consoleDrawer) : base(consoleDrawer)
         {
             _httpClient = new HttpClient
@@ -28,27 +35,31 @@ namespace Fidus.Agent
         }
         protected override async Task<string> ExecuteToolAsync(InternetSearchParameters parameters)
         {
-            _consoleDrawer.StartLoadingAnimationAsync("Searching on the internet", parameters.Query);
+            try
+            {
+                var queryObject = new { Query = parameters.Query, SearchDepth = "advanced" };
+                var queryJson = JsonSerializer.Serialize(queryObject, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                var result = await _httpClient.PostAsync("", new StringContent(queryJson, Encoding.UTF8, "application/json"));
 
-            var queryObject = new { Query = parameters.Query, SearchDepth = "advanced" };
-            var queryJson = JsonSerializer.Serialize(queryObject, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-            var result = await _httpClient.PostAsync("", new StringContent(queryJson, Encoding.UTF8, "application/json"));
+                if (!result.IsSuccessStatusCode)
+                    return $"Error performing internet search: {result.StatusCode}";
 
-            await _consoleDrawer.StopLoadingAnimationAsync();
+                var responseContent = await result.Content.ReadAsStringAsync();
+                var searchResults = JsonSerializer.Deserialize<InternetSearchResults>(responseContent, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
-            if (!result.IsSuccessStatusCode)
-                return $"Error performing internet search: {result.StatusCode}";
+                if (searchResults?.Results == null || searchResults.Results.Length == 0)
+                    return "No results found for the query.";
 
-            var responseContent = await result.Content.ReadAsStringAsync();
-            var searchResults = JsonSerializer.Deserialize<InternetSearchResults>(responseContent, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-            if (searchResults?.Results == null || searchResults.Results.Length == 0)
-                return "No results found for the query.";
-
-            var formattedResults = searchResults.Results
-                .Select((r, index) => $"Result {index + 1}:\nUrl: {r.Url}\nContent: {r.Content}\n")
-                .Aggregate((a, b) => a + "\n" + b);
-            return formattedResults;
+                var formattedResults = searchResults.Results
+                    .Select((r, index) => $"Result {index + 1}:\nUrl: {r.Url}\nContent: {r.Content}\n")
+                    .Aggregate((a, b) => a + "\n" + b);
+                return formattedResults;
+            }
+            catch (Exception ex)
+            {
+                return $"Error performing internet search: {ex.Message}";
+            }
         }
+
     }
 }

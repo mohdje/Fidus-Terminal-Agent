@@ -16,28 +16,29 @@ namespace Fidus.Agent
                 new AIToolParameter("bashCommand", "A bash command to execute (example: ls). Returns the output of the command.", "string"),
         ];
 
+        public override string StatusMessage => "Bash Command";
 
+        protected override string StatusSubMessage(ExecuteBashCommandParameters parameters)
+        {
+            return parameters.BashCommand;
+        }
         protected override async Task<string> ExecuteToolAsync(ExecuteBashCommandParameters parameters)
         {
             var command = parameters.BashCommand;
             try
             {
-                _consoleDrawer.StartLoadingAnimationAsync("Executing bash command", command);
-
                 string tempScriptPath = null;
                 bool isMultiLine = command.Contains("\n") || command.Contains("\r") || command.Contains("EOF");
                 string arguments;
 
                 if (isMultiLine)
                 {
-                    // Write the script to a temporary file
                     tempScriptPath = Path.Combine(Path.GetTempPath(), $"fidus_script_{Guid.NewGuid()}.sh");
                     await File.WriteAllTextAsync(tempScriptPath, command);
                     arguments = tempScriptPath;
                 }
                 else
                 {
-                    // Escape double quotes for shell safety
                     var safeCommand = command.Replace("\"", "\\\"");
                     arguments = $"-c \"{safeCommand}\"";
                 }
@@ -56,7 +57,6 @@ namespace Fidus.Agent
                 if (process == null)
                 {
                     var message = $"Failed to start process for command: {command}";
-                    Console.WriteLine(message);
                     if (tempScriptPath != null && File.Exists(tempScriptPath)) File.Delete(tempScriptPath);
                     return message;
                 }
@@ -69,21 +69,10 @@ namespace Fidus.Agent
 
                 if (tempScriptPath != null && File.Exists(tempScriptPath)) File.Delete(tempScriptPath);
 
-                await _consoleDrawer.StopLoadingAnimationAsync();
-
-                if (process.ExitCode == 0)
-                {
-                    return outputs[0];
-                }
-                else
-                {
-                    return outputs[1];
-                }
+                return process.ExitCode == 0 ? outputs[0] : outputs[1];
             }
             catch (Exception ex)
             {
-                await _consoleDrawer.StopLoadingAnimationAsync();
-                Console.WriteLine($"ExecuteBashCommand failed: {ex.Message}");
                 return $"ExecuteBashCommand failed: {ex.Message}";
             }
         }

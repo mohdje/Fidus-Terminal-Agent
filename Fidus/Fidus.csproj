@@ -7,7 +7,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="ConsoleInk.Net" Version="0.1.6" />
     <PackageReference Include="PromptVit" Version="1.1.1" />
     <PackageReference Include="ReadLine" Version="2.0.1" />
     <PackageReference Include="Spectre.Console" Version="0.44.0" />

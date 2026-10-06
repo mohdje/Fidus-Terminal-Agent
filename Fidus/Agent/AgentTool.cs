@@ -14,22 +14,25 @@ namespace Fidus.Agent
         public abstract string Name { get; }
 
         public abstract string Description { get; }
+        public abstract string StatusMessage { get; }
 
         public abstract AIToolParameter[] Parameters { get; }
 
-        public Task<string> ExecuteToolAsync(string jsonParameters)
+        public async Task<string> ExecuteToolAsync(string jsonParameters)
         {
             var parameters = DeserializeParameters<T>(jsonParameters);
-            var result = ExecuteToolAsync(parameters);
-            _consoleDrawer.StartLoadingAnimationAsync("Thinking...");
-            return result;
+            return await _consoleDrawer.RunWithStatusAsync(
+                StatusMessage,
+                async () => await ExecuteToolAsync(parameters), StatusSubMessage(parameters));
         }
+
+        protected abstract string StatusSubMessage(T parameters);
 
         protected abstract Task<string> ExecuteToolAsync(T parameters);
 
-        protected T DeserializeParameters<T>(string jsonParameters)
+        protected TParameter DeserializeParameters<TParameter>(string jsonParameters)
         {
-            return JsonSerializer.Deserialize<T>(jsonParameters, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            return JsonSerializer.Deserialize<TParameter>(jsonParameters, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })!;
         }
     }
 }

@@ -16,10 +16,14 @@ namespace Fidus.Agent
                 new AIToolParameter("content", "The new content for the file.", "string"),
             ];
 
+        public override string StatusMessage => "Edit File";
+        protected override string StatusSubMessage(EditFileParameters parameters)
+        {
+            return parameters.FilePath;
+        }
+
         protected override async Task<string> ExecuteToolAsync(EditFileParameters parameters)
         {
-            consoleDrawer.StartLoadingAnimationAsync($"Editing file: {parameters.FilePath}");
-
             if (string.IsNullOrEmpty(parameters.FilePath))
                 return "File path is required.";
 
@@ -32,10 +36,8 @@ namespace Fidus.Agent
             {
                 return $"Error updating file '{parameters.FilePath}': {ex.Message}";
             }
-            finally
-            {
-                await consoleDrawer.StopLoadingAnimationAsync();
-            }
         }
+
+
     }
 }

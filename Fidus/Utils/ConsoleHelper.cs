@@ -5,186 +5,148 @@ namespace Fidus.Utils
 {
     public class ConsoleHelper
     {
-        bool loadingAnimationEnabled = false;
-        int loadingRefreshRate = 200;
-        Stopwatch stopwatch = new Stopwatch();
-        string promptIndicator = "> ";
+        private readonly IAnsiConsole _console;
+        private readonly string _promptIndicator = "> ";
 
-        CancellationTokenSource cancelAnimationTokenSource;
+        public ConsoleHelper() : this(AnsiConsole.Console) { }
+
+        public ConsoleHelper(IAnsiConsole console) => _console = console;
 
         public void DrawLogo()
         {
-            var eye = "[white]◠[/]";
-            var mouth = "[white]◡[/]";
-            AnsiConsole.MarkupLine($"        [magenta]╭───────╮[/]");
-            AnsiConsole.MarkupLine($"        [magenta]│[/]  {eye} {eye}  [magenta]│[/]");
-            AnsiConsole.MarkupLine($"        [magenta]│[/]   {mouth}   [magenta]│[/]");
-            AnsiConsole.MarkupLine($"        [magenta]╰───────╯[/]");
+            _console.Write(new FigletText("FIDUS").Centered().Color(Color.DarkMagenta));
+            _console.WriteLine();
         }
 
-        public async Task StartLoadingAnimationAsync(string message, string subMessage = "")
+        StatusContext statusContext;
+        List<Tuple<string, string>> statusMessages = new List<Tuple<string, string>>();
+        public async Task<T> RunWithStatusAsync<T>(string message, Func<Task<T>> action, string? subMessage = null)
         {
-            if (loadingAnimationEnabled)
+            var stopwatch = Stopwatch.StartNew();
+            try
             {
-                await StopLoadingAnimationAsync();
+                var statusMessage = BuildStatusMessage(message, subMessage);
+                if (statusContext is not null)
+                {
+                    var previousStatusMessage = statusContext.Status;
+                    statusContext.Status(statusMessage).Spinner(Spinner.Known.CircleHalves);
+                    statusContext.Refresh();
+                    var result = await action();
+                    statusContext.Status(previousStatusMessage).Spinner(Spinner.Known.Star);
+
+                    return result;
+                }
+
+                return await _console.Status()
+                    .Spinner(Spinner.Known.Star)
+                    .SpinnerStyle(Style.Parse("cyan"))
+                    .StartAsync(statusMessage, async ctx =>
+                    {
+                        statusContext = ctx;
+                        var result = await action();
+                        statusContext = null;
+                        return result;
+                    });
             }
-
-            stopwatch.Reset();
-            stopwatch.Start();
-
-            var thinkingAnimation = new string[] { "⣾", "⣷", "⣯", "⣟", "⣻", "⣽", "⣾" };
-            int animationIndex = 0;
-
-            Console.CursorVisible = false;
-
-            loadingAnimationEnabled = true;
-
-            var subMessageLength = 50;
-            var displaySubmessage = subMessage.Length >= subMessageLength ? $"{subMessage[..subMessageLength]}..." : $"{subMessage}";
-
-            Console.Write($"[cyan]{thinkingAnimation[animationIndex]}[/] [bold cyan]{message}[/] [bold brightblack]{displaySubmessage}[/]");
-
-            cancelAnimationTokenSource = new CancellationTokenSource();
-            while (loadingAnimationEnabled && !cancelAnimationTokenSource.Token.IsCancellationRequested)
+            catch (Exception ex)
             {
-                Console.SetCursorPosition(0, Console.CursorTop);
-                Console.Write($"[cyan]{thinkingAnimation[animationIndex]}[/] ");
-                animationIndex = animationIndex == thinkingAnimation.Length - 1 ? 0 : animationIndex + 1;
-                try
-                {
-                    await Task.Delay(loadingRefreshRate, cancelAnimationTokenSource.Token);
-                }
-                catch (TaskCanceledException)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                throw new Exception($"An error occurred while executing the action: {ex.Message}", ex);
             }
-        }
-
-        public async Task StopLoadingAnimationAsync()
-        {
-            if (loadingAnimationEnabled)
+            finally
             {
-                loadingAnimationEnabled = false;
-                cancelAnimationTokenSource.Cancel();
-                try
+                stopwatch.Stop();
+                if (statusContext is null)
                 {
-                    Console.SetCursorPosition(0, Console.CursorTop);
-                    Console.Write(char.ConvertFromUtf32(0x00002705));
-                    Console.CursorLeft = Console.BufferWidth + 1;
-                    Console.Write(" ");
+                    if (statusMessages.Count > 0)
+                    {
+                        foreach (var (msg, subMsg) in statusMessages)
+                            AnsiConsole.MarkupLine($":green_circle: {msg} [gray]{subMsg}[/]");
 
-                    stopwatch.Stop();
+                        AnsiConsole.WriteLine();
+                    }
 
-                    AnsiConsole.MarkupLine($"[brightblack]Done in {FormatTimeSpan(stopwatch.Elapsed)}[/]");
-                    Console.WriteLine();
-
-                    Console.CursorVisible = true;
+                    AnsiConsole.MarkupLine($"[italic gray]{message} done in {FormatTimeSpan(stopwatch.Elapsed)}[/] \n");
+                    statusMessages.Clear();
                 }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
+                else
+                    statusMessages.Add(new Tuple<string, string>($"{message} ({FormatTimeSpan(stopwatch.Elapsed)})", subMessage ?? string.Empty));
             }
         }
 
         public string GetUserPrompt()
         {
-            var userInput = ReadLine.Read(promptIndicator);
+            var input = ReadLine.Read(_promptIndicator);
+            if (!string.IsNullOrEmpty(input))
+                ReadLine.AddHistory(input);
+            return input ?? string.Empty;
+        }
 
-            if (string.IsNullOrEmpty(userInput))
-                return string.Empty;
+        public int GetUserChoice(string prompt, string[] options)
+        {
+            var selection = new SelectionPrompt<string>()
+                .Title(prompt)
+                .AddChoices(options);
 
-            ReadLine.AddHistory(userInput);
+            var choice = _console.Prompt(selection);
+            return Array.IndexOf(options, choice);
+        }
 
-            int totalLength = userInput.Length + promptIndicator.Length;
-            int consoleWidth = Console.BufferWidth;
+        public string GetUserInput(string prompt, string? defaultValue = null)
+        {
+            var textPrompt = new TextPrompt<string>(prompt)
+                .AllowEmpty();
 
-            int linesSpanned = (totalLength + consoleWidth - 1) / consoleWidth;
-            int currentCursorTop = Console.CursorTop;
-            for (int i = 0; i < linesSpanned; i++)
+            if (!string.IsNullOrEmpty(defaultValue))
+                textPrompt.DefaultValue(defaultValue);
+
+            return _console.Prompt(textPrompt);
+        }
+
+        public string GetSecretInput(string prompt, string? existingValue = null)
+        {
+            var textPrompt = new TextPrompt<string>(prompt)
+                .Secret()
+                .AllowEmpty();
+
+            var result = _console.Prompt(textPrompt);
+            return string.IsNullOrEmpty(result) ? existingValue : result;
+        }
+
+        public decimal GetUserDecimal(string prompt, decimal min, decimal max, decimal? defaultValue = null)
+        {
+            var decimalPrompt = new TextPrompt<decimal>(prompt)
+                .Validate(val => val >= min && val <= max
+                    ? ValidationResult.Success()
+                    : ValidationResult.Error($"Value must be between {min} and {max}"));
+
+            if (defaultValue.HasValue)
+                decimalPrompt.DefaultValue(defaultValue.Value);
+
+            return _console.Prompt(decimalPrompt);
+        }
+
+        private static string BuildStatusMessage(string message, string subMessage = "")
+        {
+            string text = string.Empty;
+            if (!string.IsNullOrEmpty(subMessage))
             {
-                Console.SetCursorPosition(0, currentCursorTop - linesSpanned + i);
-                Console.Write(new string(' ', consoleWidth - 1));
+                text = subMessage.Replace('\r', ' ').Replace('\n', ' ').Trim();
+                if (text.Length > 120)
+                    text = text[..117] + "...";
             }
 
-            Console.SetCursorPosition(0, currentCursorTop - linesSpanned);
-            AnsiConsole.MarkupLine($"[bold brightmagenta]{userInput}[/]");
-            return userInput;
-        }
-
-        public int GetUserChoice(string prompt, string[] options, int? defaultChoiceIndex = null)
-        {
-            AnsiConsole.MarkupLine($"[bold brightmagenta]{prompt}[/]");
-            for (int i = 0; i < options.Length; i++)
-                AnsiConsole.MarkupLine($"[{i}] {options[i]}");
-
-            if (defaultChoiceIndex.HasValue && defaultChoiceIndex.Value >= 0 && defaultChoiceIndex.Value < options.Length)
-                AnsiConsole.MarkupLine($"[italic brightcyan]Press Enter to keep the default one: {options[defaultChoiceIndex.Value]}[/]");
-
-            string? choiceIndex;
-            bool notValidIndex;
-            do
-            {
-                choiceIndex = ReadLine.Read(promptIndicator, defaultChoiceIndex.ToString());
-                notValidIndex = !int.TryParse(choiceIndex, out int index) || index < 0 || index >= options.Length;
-                if (notValidIndex)
-                    AnsiConsole.MarkupLine($"[bold brightred]Invalid index. Please choose a valid index from the list above.[/]");
-
-            } while (notValidIndex);
-            return int.Parse(choiceIndex);
-        }
-
-        public string GetUserInput(string prompt, string defaultValue = "")
-        {
-            AnsiConsole.MarkupLine($"[bold brightmagenta]{prompt}[/]");
-            if (!string.IsNullOrEmpty(defaultValue))
-                AnsiConsole.MarkupLine($"[italic brightcyan]Press Enter to keep the default one: {defaultValue}[/]");
-
-            var userInput = ReadLine.Read(promptIndicator, defaultValue);
-
-            if (string.IsNullOrEmpty(userInput))
-                return defaultValue;
-
-            return userInput;
-        }
-
-        public decimal GetUserInput(string prompt, decimal min, decimal max, decimal? defaultValue = null)
-        {
-            AnsiConsole.MarkupLine($"[bold brightmagenta]{prompt}[/]");
-            if (defaultValue.HasValue)
-                AnsiConsole.MarkupLine($"[italic brightcyan]Press Enter to keep the default one: {defaultValue.Value}[/]");
-
-            bool valueNotValid;
-            decimal value;
-            do
-            {
-                var valueInput = ReadLine.Read(promptIndicator, defaultValue.HasValue ? defaultValue.Value.ToString() : string.Empty);
-                valueNotValid = !decimal.TryParse(valueInput, out value) || value < min || value > max;
-                if (valueNotValid)
-                    AnsiConsole.MarkupLine($"[bold brightred]Invalid value. Please enter a value between {min} and {max}.[/]");
-            } while (valueNotValid);
-
-            return value;
+            return $"{message} [gray]{text}[/]".Trim();
         }
 
         private static string FormatTimeSpan(TimeSpan ts)
         {
             if (ts.TotalHours >= 1)
                 return ts.ToString(@"h\:mm\:ss") + " (h:min:sec)";
-
             if (ts.TotalMinutes >= 1)
                 return ts.ToString(@"m\:ss") + "min";
-
             if (ts.TotalSeconds < 1)
                 return $"{ts.TotalMilliseconds / 1000:F2}s";
-
             return $"{(int)ts.TotalSeconds}sec";
         }
-
     }
 }
