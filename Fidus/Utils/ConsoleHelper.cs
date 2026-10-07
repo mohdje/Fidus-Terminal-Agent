@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using BoxOfYellow.ConsoleMarkdownRenderer.Spectre;
+using BoxOfYellow.ConsoleMarkdownRenderer.Spectre.Styling;
 using Spectre.Console;
 
 namespace Fidus.Utils
@@ -7,19 +9,15 @@ namespace Fidus.Utils
     {
         private readonly IAnsiConsole _console;
         private readonly string _promptIndicator = "> ";
+        private readonly MarkdownRenderer renderer = new();
+
+        private StatusContext? statusContext = null;
+        private readonly List<Tuple<string, string>> statusMessages = [];
 
         public ConsoleHelper() : this(AnsiConsole.Console) { }
 
         public ConsoleHelper(IAnsiConsole console) => _console = console;
 
-        public void DrawLogo()
-        {
-            _console.Write(new FigletText("FIDUS").Centered().Color(Color.DarkMagenta));
-            _console.WriteLine();
-        }
-
-        StatusContext statusContext;
-        List<Tuple<string, string>> statusMessages = new List<Tuple<string, string>>();
         public async Task<T> RunWithStatusAsync<T>(string message, Func<Task<T>> action, string? subMessage = null)
         {
             var stopwatch = Stopwatch.StartNew();
@@ -60,12 +58,12 @@ namespace Fidus.Utils
                     if (statusMessages.Count > 0)
                     {
                         foreach (var (msg, subMsg) in statusMessages)
-                            AnsiConsole.MarkupLine($":green_circle: {msg} [gray]{subMsg}[/]");
+                            _console.MarkupLine($":green_circle: {msg} [gray]{subMsg}[/]");
 
-                        AnsiConsole.WriteLine();
+                        _console.WriteLine();
                     }
 
-                    AnsiConsole.MarkupLine($"[italic gray]{message} done in {FormatTimeSpan(stopwatch.Elapsed)}[/] \n");
+                    _console.MarkupLine($"[italic gray]{message} done in {FormatTimeSpan(stopwatch.Elapsed)}[/] \n");
                     statusMessages.Clear();
                 }
                 else
@@ -125,7 +123,64 @@ namespace Fidus.Utils
             return _console.Prompt(decimalPrompt);
         }
 
-        private static string BuildStatusMessage(string message, string subMessage = "")
+
+        public void RenderWelcomeScreen(string agentName, bool loadHistory)
+        {
+            DrawLogo();
+            _console.WriteLine();
+
+            _console.MarkupLine($"[bold magenta]Your {Markup.Escape(agentName)} assistant[/]");
+
+            if (loadHistory)
+                _console.MarkupLine($"[italic gray]Resuming previous session for {Markup.Escape(agentName)}[/]");
+            else
+                _console.MarkupLine($"[italic gray]Starting a new session for {Markup.Escape(agentName)}[/]");
+
+            _console.WriteLine();
+            _console.MarkupLine($"[bold white]Hello [bold cyan]{Markup.Escape(Environment.UserName)}[/], what can I do for you?[/]");
+        }
+
+        public void DrawLogo()
+        {
+            var eye = "[white]◠[/]";
+            var mouth = "[white]◡[/]";
+            AnsiConsole.MarkupLine($"        [magenta]╭───────╮[/]");
+            AnsiConsole.MarkupLine($"        [magenta]│[/]  {eye} {eye}  [magenta]│[/]");
+            AnsiConsole.MarkupLine($"        [magenta]│[/]   {mouth}   [magenta]│[/]");
+            AnsiConsole.MarkupLine($"        [magenta]╰───────╯[/]");
+        }
+
+        public void RenderMarkdown(string markdownContent)
+        {
+            var options = new SpectreDisplayOptions();
+            var codeStyle = new Style(
+                foreground: Color.Cyan,
+                background: Color.Default,
+                decoration: Decoration.Bold);
+
+            options.CodeInLine = codeStyle;
+            options.CodeBlock = codeStyle;
+            options.HtmlInline = new Style(
+                foreground: Color.Yellow,
+                background: Color.Default,
+                decoration: Decoration.Bold);
+
+
+            options.Header = new SpectreTextStyle(foreground: Color.Magenta, decoration: Decoration.Bold);
+
+            options.Headers[0] = new SpectreTextStyle(foreground: Color.BlueViolet, decoration: Decoration.Underline | Decoration.Bold);
+
+
+            var result = renderer.Render(markdownContent, options);
+            _console.Write(result.Root ?? Text.Empty);
+        }
+
+        public void RenderError(string errorMessage)
+        {
+            _console.MarkupLine($"[bold red]Error: {Markup.Escape(errorMessage)}[/]");
+        }
+
+        private string BuildStatusMessage(string message, string subMessage = "")
         {
             string text = string.Empty;
             if (!string.IsNullOrEmpty(subMessage))
@@ -138,7 +193,7 @@ namespace Fidus.Utils
             return $"{message} [gray]{text}[/]".Trim();
         }
 
-        private static string FormatTimeSpan(TimeSpan ts)
+        private string FormatTimeSpan(TimeSpan ts)
         {
             if (ts.TotalHours >= 1)
                 return ts.ToString(@"h\:mm\:ss") + " (h:min:sec)";
@@ -149,4 +204,6 @@ namespace Fidus.Utils
             return $"{(int)ts.TotalSeconds}sec";
         }
     }
+
+
 }
