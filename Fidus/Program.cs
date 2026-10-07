@@ -41,7 +41,7 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper, bool loadHis
 {
     Console.WriteLine();
 
-    consoleHelper.RenderWelcomeScreen(aiAgent.Name, loadHistory);
+    consoleHelper.RenderWelcomeScreen(aiAgent.Name, loadHistory ? await aiAgent.GetChatHistoryAsync() : null);
 
     while (true)
     {

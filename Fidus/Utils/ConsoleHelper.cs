@@ -123,21 +123,26 @@ namespace Fidus.Utils
             return _console.Prompt(decimalPrompt);
         }
 
-
-        public void RenderWelcomeScreen(string agentName, bool loadHistory)
+        public void RenderWelcomeScreen(string agentName, string chatHistory = null)
         {
             DrawLogo();
             _console.WriteLine();
-
-            _console.MarkupLine($"[bold magenta]Your {Markup.Escape(agentName)} assistant[/]");
-
-            if (loadHistory)
-                _console.MarkupLine($"[italic gray]Resuming previous session for {Markup.Escape(agentName)}[/]");
-            else
-                _console.MarkupLine($"[italic gray]Starting a new session for {Markup.Escape(agentName)}[/]");
-
+            _console.MarkupLine($"[magenta]Your[/] [cyan bold]{Markup.Escape(agentName)}[/] [magenta]assistant[/]");
             _console.WriteLine();
-            _console.MarkupLine($"[bold white]Hello [bold cyan]{Markup.Escape(Environment.UserName)}[/], what can I do for you?[/]");
+
+            if (string.IsNullOrEmpty(chatHistory) is false)
+            {
+                RenderMarkdown(chatHistory);
+                _console.WriteLine();
+                _console.MarkupLine($"[italic gray]Previous session resumed for[/] [bold gray]{Markup.Escape(agentName)}[/] [italic gray]agent[/]");
+            }
+            else
+            {
+                _console.MarkupLine($"[italic gray]New session for[/] [bold gray]{Markup.Escape(agentName)}[/] [italic gray]agent. You can resume previous session with command[/] [bold gray]fidus -r -a {agentName}[/]");
+                _console.WriteLine();
+                _console.MarkupLine($"[bold white]Hello [bold green]{Markup.Escape(Environment.UserName)}[/], what can I do for you?[/]");
+            }
+            _console.WriteLine();
         }
 
         public void DrawLogo()
@@ -169,7 +174,6 @@ namespace Fidus.Utils
             options.Header = new SpectreTextStyle(foreground: Color.Magenta, decoration: Decoration.Bold);
 
             options.Headers[0] = new SpectreTextStyle(foreground: Color.BlueViolet, decoration: Decoration.Underline | Decoration.Bold);
-
 
             var result = renderer.Render(markdownContent, options);
             _console.Write(result.Root ?? Text.Empty);

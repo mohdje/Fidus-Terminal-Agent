@@ -1,3 +1,4 @@
+using System.Text;
 using Fidus.Enums;
 using Fidus.Models;
 using Fidus.Utils;
@@ -10,30 +11,24 @@ namespace Fidus.Agent
     {
         readonly AIClient aiClient;
         public readonly string Name;
+        private readonly string agentHistoryFilePath;
         private readonly string chatHistoryFilePath;
+        private StringBuilder chatHistoryBuilder;
+
+
         private Agent(AIClient aiClient, int agentId, string name)
         {
             this.aiClient = aiClient;
             Name = name;
+            this.agentHistoryFilePath = AppFiles.GetAgentHistoryFile(agentId);
             this.chatHistoryFilePath = AppFiles.GetChatHistoryFile(agentId);
         }
 
         public static async Task<Agent> CreateAsync(AgentSettings settings, bool loadHistory = false, IEnumerable<IAITool> aITools = null)
         {
             var aiClient = await BuildAIAgentAsync(settings, loadHistory, aITools);
+
             return new Agent(aiClient, settings.Id, settings.Name);
-        }
-
-        public async Task<string> Invoke(string userInput)
-        {
-            var response = await aiClient.Invoke(userInput);
-
-            if (Directory.Exists(Path.GetDirectoryName(chatHistoryFilePath)) == false)
-                Directory.CreateDirectory(Path.GetDirectoryName(chatHistoryFilePath));
-
-            await aiClient.SaveHistoryAsync(chatHistoryFilePath);
-
-            return response;
         }
 
         private static async Task<AIClient> BuildAIAgentAsync(AgentSettings settings, bool loadHistory, IEnumerable<IAITool> aITools)
@@ -74,20 +69,18 @@ namespace Fidus.Agent
             aiClient.TopP = settings.TopP!.Value;
 
             var loadSystemPrompt = true;
-            var chatHistoryFilePath = AppFiles.GetChatHistoryFile(settings.Id);
-            if (loadHistory)
+            var agentHistoryFilePath = AppFiles.GetAgentHistoryFile(settings.Id);
+
+            if (loadHistory && File.Exists(agentHistoryFilePath))
             {
-                if (File.Exists(chatHistoryFilePath))
+                try
                 {
-                    try
-                    {
-                        await aiClient.LoadHistoryAsync(chatHistoryFilePath);
-                        loadSystemPrompt = false;
-                    }
-                    catch (Exception ex)
-                    {
-                        File.Delete(chatHistoryFilePath);
-                    }
+                    await aiClient.LoadHistoryAsync(agentHistoryFilePath);
+                    loadSystemPrompt = false;
+                }
+                catch
+                {
+                    File.Delete(agentHistoryFilePath);
                 }
             }
 
@@ -101,6 +94,63 @@ namespace Fidus.Agent
                 aiClient.SetTools(aITools);
 
             return aiClient;
+        }
+
+
+        public async Task<string> Invoke(string userInput)
+        {
+            var response = await aiClient.Invoke(userInput);
+
+            await Task.WhenAll(
+                SaveAgentHistoryAsync(),
+                SaveChatHistoryAsync(userInput, response)
+            );
+
+            return response;
+        }
+
+        private async Task SaveAgentHistoryAsync()
+        {
+            if (Directory.Exists(Path.GetDirectoryName(agentHistoryFilePath)) == false)
+                Directory.CreateDirectory(Path.GetDirectoryName(agentHistoryFilePath));
+
+            await aiClient.SaveHistoryAsync(agentHistoryFilePath);
+        }
+
+        private async Task SaveChatHistoryAsync(string userInput, string response)
+        {
+            chatHistoryBuilder ??= new StringBuilder();
+            chatHistoryBuilder.AppendLine($"=={userInput}==");
+            chatHistoryBuilder.AppendLine();
+            chatHistoryBuilder.AppendLine($"{response}");
+            chatHistoryBuilder.AppendLine();
+
+            if (Directory.Exists(Path.GetDirectoryName(chatHistoryFilePath)) == false)
+                Directory.CreateDirectory(Path.GetDirectoryName(chatHistoryFilePath));
+
+            await File.WriteAllTextAsync(chatHistoryFilePath, chatHistoryBuilder.ToString());
+        }
+
+        public async Task<string> GetChatHistoryAsync()
+        {
+            if (chatHistoryBuilder is not null)
+                return chatHistoryBuilder.ToString();
+
+            if (File.Exists(chatHistoryFilePath))
+            {
+                try
+                {
+                    var chatHistory = await File.ReadAllTextAsync(chatHistoryFilePath);
+                    chatHistoryBuilder = new StringBuilder(chatHistory);
+                    return chatHistoryBuilder.ToString();
+                }
+                catch
+                {
+                    File.Delete(chatHistoryFilePath);
+                }
+            }
+
+            return string.Empty;
         }
 
         private static async Task<string> GetSystemPromptAsync(AgentSettings agentSettings)
