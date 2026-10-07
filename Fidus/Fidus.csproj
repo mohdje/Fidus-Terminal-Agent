@@ -7,9 +7,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="BoxOfYellow.ConsoleMarkdownRenderer.Spectre" Version="0.12.5" />
     <PackageReference Include="PromptVit" Version="1.1.1" />
     <PackageReference Include="ReadLine" Version="2.0.1" />
-    <PackageReference Include="Spectre.Console" Version="0.44.0" />
+    <PackageReference Include="Spectre.Console" Version="0.57.2" />
   </ItemGroup>
 
   <ItemGroup>
