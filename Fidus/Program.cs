@@ -51,17 +51,24 @@ static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper, bool loadHis
 
         Console.WriteLine();
 
+        int? id = null;
         try
         {
-            var response = await consoleHelper.RunWithStatusAsync("Thinking", async () => await aiAgent.Invoke(userInput));
+            id = await consoleHelper.RenderTaskProcessingAsync("Thinking");
+
+            var response = await aiAgent.Invoke(userInput);
+
+            await consoleHelper.StopRenderTaskProcessingAsync(id.GetValueOrDefault(-1));
+
+            Console.WriteLine();
 
             consoleHelper.RenderMarkdown(response);
 
             Console.WriteLine();
-            Console.WriteLine();
         }
         catch (Exception ex)
         {
+            await consoleHelper.StopRenderTaskProcessingAsync(id.GetValueOrDefault(-1));
             consoleHelper.RenderError(ex.Message);
             File.AppendAllText(AppFiles.ErrorLogsFilePath, $"[{DateTime.Now}] Error: {ex.Message}{Environment.NewLine}");
         }
