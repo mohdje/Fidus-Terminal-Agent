@@ -11,66 +11,78 @@ namespace Fidus.Utils
         private readonly string _promptIndicator = "> ";
         private readonly MarkdownRenderer renderer = new();
 
-        private StatusContext? statusContext = null;
-        private readonly List<Tuple<string, string>> statusMessages = [];
-
         public ConsoleHelper() : this(AnsiConsole.Console) { }
 
         public ConsoleHelper(IAnsiConsole console) => _console = console;
+        private List<TaskData> tasksList = [];
 
-        public async Task<T> RunWithStatusAsync<T>(string message, Func<Task<T>> action, string? subMessage = null)
+        class TaskData(int id, string message, string subMessage, DateTime startTime)
         {
-            var stopwatch = Stopwatch.StartNew();
-            try
-            {
-                var statusMessage = BuildStatusMessage(message, subMessage);
-                if (statusContext is not null)
-                {
-                    var previousStatusMessage = statusContext.Status;
-                    statusContext.Status(statusMessage).Spinner(Spinner.Known.CircleHalves);
-                    statusContext.Refresh();
-                    var result = await action();
-                    statusContext.Status(previousStatusMessage).Spinner(Spinner.Known.Star);
-
-                    return result;
-                }
-
-                return await _console.Status()
-                    .Spinner(Spinner.Known.Star)
-                    .SpinnerStyle(Style.Parse("cyan"))
-                    .StartAsync(statusMessage, async ctx =>
-                    {
-                        statusContext = ctx;
-                        var result = await action();
-                        statusContext = null;
-                        return result;
-                    });
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"An error occurred while executing the action: {ex.Message}", ex);
-            }
-            finally
-            {
-                stopwatch.Stop();
-                if (statusContext is null)
-                {
-                    if (statusMessages.Count > 0)
-                    {
-                        foreach (var (msg, subMsg) in statusMessages)
-                            _console.MarkupLine($":green_circle: {msg} [gray]{subMsg}[/]");
-
-                        _console.WriteLine();
-                    }
-
-                    _console.MarkupLine($"[italic gray]{message} done in {FormatTimeSpan(stopwatch.Elapsed)}[/] \n");
-                    statusMessages.Clear();
-                }
-                else
-                    statusMessages.Add(new Tuple<string, string>($"{message} ({FormatTimeSpan(stopwatch.Elapsed)})", subMessage ?? string.Empty));
-            }
+            public int Id => id;
+            public string Message => message;
+            public string SubMessage => subMessage;
+            public DateTime StartTime => startTime;
         }
 
+        CancellationTokenSource cancellationTokenSource;
+        public async Task<int> RenderTaskProcessingAsync(string message, string? subMessage = null)
+        {
+            cancellationTokenSource?.Cancel();
+
+            await Task.Delay(100);
+
+            var newTask = new TaskData(tasksList.Count + 1, message, subMessage, DateTime.Now);
+
+            tasksList.Add(newTask);
+
+            RenderTasksProcessing();
+
+            return newTask.Id;
+        }
+
+        private void RenderTasksProcessing()
+        {
+            cancellationTokenSource = new CancellationTokenSource();
+
+            var t = tasksList.LastOrDefault();
+            if (t is null)
+                return;
+
+            var statusMessage = BuildStatusMessage(t.Message, subMessage: t.SubMessage);
+            _console.Status()
+              .Spinner(string.IsNullOrEmpty(t.SubMessage) ? Spinner.Known.Star : Spinner.Known.CircleHalves)
+              .SpinnerStyle(Style.Parse("cyan"))
+              .StartAsync(statusMessage, async ctx =>
+              {
+                  try
+                  {
+                      while (!cancellationTokenSource.IsCancellationRequested)
+                      {
+                          ctx.Status(BuildStatusMessage(t.Message, DateTime.Now - t.StartTime, t.SubMessage));
+                          await Task.Delay(100, cancellationTokenSource.Token);
+                      }
+                  }
+                  catch (TaskCanceledException) { }
+              });
+
+        }
+
+        public async Task StopRenderTaskProcessingAsync(int taskId)
+        {
+            if (!tasksList.Any(t => t.Id == taskId))
+                return;
+
+            cancellationTokenSource?.Cancel();
+
+            await Task.Delay(100);
+
+            var taskToStop = tasksList.Single(t => t.Id == taskId);
+            tasksList.Remove(taskToStop);
+
+            _console.MarkupLine($":green_circle: {BuildStatusMessage(taskToStop.Message, DateTime.Now - taskToStop.StartTime, taskToStop.SubMessage)}");
+
+            RenderTasksProcessing();
+        }
         public string GetUserPrompt()
         {
             var input = ReadLine.Read(_promptIndicator);
@@ -184,7 +196,8 @@ namespace Fidus.Utils
             _console.MarkupLine($"[bold red]Error: {Markup.Escape(errorMessage)}[/]");
         }
 
-        private string BuildStatusMessage(string message, string subMessage = "")
+
+        private string BuildStatusMessage(string message, TimeSpan? ts = null, string subMessage = "")
         {
             string text = string.Empty;
             if (!string.IsNullOrEmpty(subMessage))
@@ -193,6 +206,9 @@ namespace Fidus.Utils
                 if (text.Length > 120)
                     text = text[..117] + "...";
             }
+
+            if (ts.HasValue)
+                message += $"({FormatTimeSpan(ts.Value)})";
 
             return $"{message} [gray]{text}[/]".Trim();
         }

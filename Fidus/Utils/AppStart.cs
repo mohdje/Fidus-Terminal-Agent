@@ -216,11 +216,12 @@ namespace Fidus.Utils
             Agent should also be able to answer questions about its work and questions relative to its domain of expertise. The agent shall not answer questions that are not related to its purpose.
             No reasoning, no explanation, just the system prompt in a markdown format. Do not include any additional text. ";
 
+                    int? taskId = null;
                     try
                     {
-                        var response = await consoleHelper.RunWithStatusAsync(
-                            "Creating agent",
-                            async () => await aiClient.Invoke(prompt));
+                        taskId = await consoleHelper.RenderTaskProcessingAsync("Creating agent");
+
+                        var response = await aiClient.Invoke(prompt);
 
                         var systemPromptFilePath = AppFiles.GetSystemPromptFile(agentSettings.Id);
                         await File.WriteAllTextAsync(systemPromptFilePath, response);
@@ -228,6 +229,10 @@ namespace Fidus.Utils
                     catch (Exception ex)
                     {
                         AnsiConsole.WriteLine($"Failed to generate the system prompt: {ex.Message}");
+                    }
+                    finally
+                    {
+                        await consoleHelper.StopRenderTaskProcessingAsync(taskId.GetValueOrDefault(-1));
                     }
                 }
             }

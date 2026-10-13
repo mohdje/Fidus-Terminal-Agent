@@ -21,9 +21,11 @@ namespace Fidus.Agent
         public async Task<string> ExecuteToolAsync(string jsonParameters)
         {
             var parameters = DeserializeParameters<T>(jsonParameters);
-            return await _consoleDrawer.RunWithStatusAsync(
-                StatusMessage,
-                async () => await ExecuteToolAsync(parameters), StatusSubMessage(parameters));
+
+            var taskId = await _consoleDrawer.RenderTaskProcessingAsync(StatusMessage, StatusSubMessage(parameters));
+            var result = await ExecuteToolAsync(parameters);
+            await _consoleDrawer.StopRenderTaskProcessingAsync(taskId);
+            return result;
         }
 
         protected abstract string StatusSubMessage(T parameters);
