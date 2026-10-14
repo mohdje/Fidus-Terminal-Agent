@@ -16,9 +16,7 @@ Fidus/obj/
 *.sln.iml
 
 # Build outputs
-build/linux/publish/*
-!build/linux/publish/DEBIAN/
-!build/linux/publish/linux/DEBIAN/control
+build/linux/publish/
 build/linux/*.deb
 build/linux/*.deb.zip
 build/macos/publish/

@@ -14,7 +14,7 @@ fi
 
 dotnet publish "$PROJECT" -c Release -r linux-x64 --self-contained true /p:Version="$VERSION"
 
-rm -rf "$PUBLISH_DIR/usr/"
+rm -rf "$PUBLISH_DIR/"
 mkdir -p "$PUBLISH_DIR/usr/bin/fidusCLI"
 mkdir -p "$PUBLISH_DIR/DEBIAN"
 

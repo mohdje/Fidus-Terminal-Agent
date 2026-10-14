@@ -1,7 +1,0 @@
-Package: fidus
-Version: 2.0.0
-Section: utils
-Priority: optional
-Architecture: all
-Maintainer: mohdje <djellebm@hotmail.fr>
-Description: CLI AI assistant 
