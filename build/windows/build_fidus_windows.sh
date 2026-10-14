@@ -5,6 +5,12 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd)"
 PROJECT="$REPO_ROOT/Fidus/Fidus.csproj"
 PUBLISH_ROOT="$SCRIPT_DIR/publish"
+VERSION="$(dotnet msbuild "$PROJECT" -nologo -getProperty:Version)"
+
+if [[ -z "$VERSION" ]]; then
+    echo "Unable to determine the project version from $PROJECT" >&2
+    exit 1
+fi
 
 for rid in win-x64 win-arm64; do
     publish_dir="$PUBLISH_ROOT/$rid"
@@ -17,7 +23,8 @@ for rid in win-x64 win-arm64; do
         --configuration Release \
         --runtime "$rid" \
         --self-contained true \
-        --output "$publish_dir"
+        --output "$publish_dir" \
+        /p:Version="$VERSION"
 
     (
         cd "$publish_dir"

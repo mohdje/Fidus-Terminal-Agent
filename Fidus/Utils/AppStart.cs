@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using Spectre.Console;
 using Fidus.Enums;
 using Fidus.Models;
@@ -19,7 +20,12 @@ namespace Fidus.Utils
             }
             else if (commandArgs.HasArgument(CommandArgId.Version))
             {
-                AnsiConsole.MarkupLine("[bold]FIDUS version: 2.0.1[/]");
+                var informationalVersion = typeof(AppStart).Assembly
+                    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+                    .InformationalVersion;
+
+                var versionText = informationalVersion ?? typeof(AppStart).Assembly.GetName().Version?.ToString() ?? "unknown";
+                AnsiConsole.MarkupLine($"[bold]FIDUS version: {Markup.Escape(versionText)}[/]");
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.Logs))
