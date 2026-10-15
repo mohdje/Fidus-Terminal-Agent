@@ -10,7 +10,7 @@ namespace Fidus.Agent
     public class Agent
     {
         readonly AIClient aiClient;
-        public readonly string Name;
+        public string Name { get; private set; }
         private readonly string agentHistoryFilePath;
         private readonly string chatHistoryFilePath;
         private StringBuilder chatHistoryBuilder;

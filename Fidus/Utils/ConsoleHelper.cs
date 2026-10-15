@@ -135,29 +135,46 @@ namespace Fidus.Utils
             return _console.Prompt(decimalPrompt);
         }
 
-        public void RenderWelcomeScreen(string agentName, string chatHistory = null)
+        public void RenderWelcomeScreen(string agentName)
         {
             DrawLogo();
             _console.WriteLine();
             _console.MarkupLine($"[magenta]Your[/] [cyan bold]{Markup.Escape(agentName)}[/] [magenta]assistant[/]");
             _console.WriteLine();
+        }
+
+        public async Task LoadChatHistoryAsync(Fidus.Agent.Agent agent)
+        {
+            var chatHistory = await agent.GetChatHistoryAsync();
 
             if (string.IsNullOrEmpty(chatHistory) is false)
             {
                 RenderMarkdown(chatHistory);
                 _console.WriteLine();
-                _console.MarkupLine($"[italic gray]Previous session resumed for[/] [bold gray]{Markup.Escape(agentName)}[/] [italic gray]agent[/]");
+                _console.MarkupLine($"[italic gray]Previous session resumed for[/] [bold gray]{Markup.Escape(agent.Name)}[/] [italic gray]agent[/]");
             }
             else
             {
-                _console.MarkupLine($"[italic gray]New session for[/] [bold gray]{Markup.Escape(agentName)}[/] [italic gray]agent. You can resume previous session with command[/] [bold gray]fidus -r -a {agentName}[/]");
+                _console.MarkupLine($"[italic gray]No previous session found for[/] [bold gray]{Markup.Escape(agent.Name)}[/] [italic gray]agent.[/]");
                 _console.WriteLine();
                 _console.MarkupLine($"[bold white]Hello [bold green]{Markup.Escape(Environment.UserName)}[/], what can I do for you?[/]");
             }
+        }
+
+        public void RenderNewSessionMessage(string agentName)
+        {
+            _console.MarkupLine($"[italic gray]New session for[/] [bold gray]{Markup.Escape(agentName)}[/] [italic gray]agent. To resume previous session run[/] [bold gray]fidus -r -a {agentName}[/]");
+            _console.WriteLine();
+            _console.MarkupLine($"[bold white]Hello [bold green]{Markup.Escape(Environment.UserName)}[/], what can I do for you?[/]");
+        }
+
+        public void RenderUpdateAvailable()
+        {
+            _console.MarkupLine("[green][italic]New version available. Run [/][bold]fidus --update[/][italic] to install it[/][/]");
             _console.WriteLine();
         }
 
-        public void DrawLogo()
+        private void DrawLogo()
         {
             var eye = "[white]◠[/]";
             var mouth = "[white]◡[/]";

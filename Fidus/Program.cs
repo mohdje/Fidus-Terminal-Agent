@@ -35,13 +35,27 @@ catch (Exception ex)
 }
 
 if (agent is not null)
-    await Start(agent, consoleHelper, loadHistory);
+{
+    var updateAvailable = await new GitHubReleaseUpdateChecker().CheckForUpdateAsync();
 
-static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper, bool loadHistory)
+    await Start(agent, consoleHelper, loadHistory, updateAvailable);
+}
+
+static async Task Start(Agent aiAgent, ConsoleHelper consoleHelper, bool loadHistory, bool updateAvailable)
 {
     Console.WriteLine();
 
-    consoleHelper.RenderWelcomeScreen(aiAgent.Name, loadHistory ? await aiAgent.GetChatHistoryAsync() : null);
+    consoleHelper.RenderWelcomeScreen(aiAgent.Name);
+
+    if (loadHistory)
+        await consoleHelper.LoadChatHistoryAsync(aiAgent);
+    else
+    {
+        consoleHelper.RenderNewSessionMessage(aiAgent.Name);
+    }
+
+    if (updateAvailable)
+        consoleHelper.RenderUpdateAvailable();
 
     while (true)
     {
