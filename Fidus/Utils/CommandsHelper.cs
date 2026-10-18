@@ -17,6 +17,7 @@ namespace Fidus.Utils
             new CommandArg(["-l", "--logs"], CommandArgId.Logs, "Show logs", string.Empty),
             new CommandArg(["-h", "--help"], CommandArgId.Help, "Show help message", string.Empty),
             new CommandArg(["-v", "--version"], CommandArgId.Version, "Show version information", string.Empty),
+            new CommandArg(["-u", "--update"], CommandArgId.Update, "Check for and install the latest stable version", string.Empty),
         ];
 
         public static string GetArgumentValue(this string[]? commandArgs, CommandArgId argumentId)

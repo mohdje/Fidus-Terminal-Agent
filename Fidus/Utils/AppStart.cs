@@ -2,12 +2,18 @@ using System.Diagnostics;
 using Spectre.Console;
 using Fidus.Enums;
 using Fidus.Models;
+using Fidus.Manager;
 
 namespace Fidus.Utils
 {
-    public class AppStart(ConsoleHelper consoleHelper)
+    public class AppStart(
+        ConsoleHelper consoleHelper,
+        UpdateManager updateManager,
+        AgentsSettingsManager agentsSettingsManager)
     {
         readonly ConsoleHelper consoleHelper = consoleHelper;
+        readonly UpdateManager updateManager = updateManager;
+        readonly AgentsSettingsManager agentsSettingsManager = agentsSettingsManager;
 
         public async Task<AgentSettings?> Initialize(string[] commandArgs)
         {
@@ -38,10 +44,13 @@ namespace Fidus.Utils
 
                 return null;
             }
+            else if (commandArgs.HasArgument(CommandArgId.Update))
+            {
+                Environment.ExitCode = await updateManager.ExecuteAsync();
+                return null;
+            }
 
             var agentName = commandArgs.GetArgumentValue(CommandArgId.AgentName) ?? "terminal";
-
-            var agentsSettingsManager = new AgentsSettingsManager();
             var agentSettings = agentsSettingsManager.GetAgentSettings(agentName);
 
             if (commandArgs.HasArgument(CommandArgId.ListAgents))

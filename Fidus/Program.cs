@@ -2,13 +2,17 @@
 using Fidus.Agent;
 using Fidus.Enums;
 using PromptVit;
+using Fidus.Manager;
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 string[] commandArgs = args;
 var consoleHelper = new ConsoleHelper();
+var updateManager = new UpdateManager(consoleHelper);
+var agentsSettingsManager = new AgentsSettingsManager();
 
-var appStart = new AppStart(consoleHelper);
+
+var appStart = new AppStart(consoleHelper, updateManager, agentsSettingsManager);
 var agentSettings = await appStart.Initialize(commandArgs);
 
 if (agentSettings is null)
@@ -36,7 +40,7 @@ catch (Exception ex)
 
 if (agent is not null)
 {
-    var updateAvailable = await new GitHubReleaseUpdateChecker().CheckForUpdateAsync();
+    var updateAvailable = await updateManager.CheckForUpdateAsync();
 
     await Start(agent, consoleHelper, loadHistory, updateAvailable);
 }

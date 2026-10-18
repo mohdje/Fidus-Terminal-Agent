@@ -11,6 +11,7 @@ namespace Fidus.Enums
         RemoveAgent,
         ListAgents,
         AgentSettings,
-        SystemPrompt
+        SystemPrompt,
+        Update
     }
 }

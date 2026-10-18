@@ -1,7 +1,8 @@
 using System.Text.Json;
 using Fidus.Models;
+using Fidus.Utils;
 
-namespace Fidus.Utils
+namespace Fidus.Manager
 {
     public class AgentsSettingsManager
     {
