@@ -8,6 +8,17 @@ Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 string[] commandArgs = args;
 var consoleHelper = new ConsoleHelper();
+try
+{
+    AppFiles.InitializeUserData();
+}
+catch (Exception ex)
+{
+    consoleHelper.RenderError($"Unable to initialize persistent user data: {ex.Message}");
+    Environment.ExitCode = 1;
+    return;
+}
+
 var updateManager = new UpdateManager(consoleHelper);
 var agentsSettingsManager = new AgentsSettingsManager();
 

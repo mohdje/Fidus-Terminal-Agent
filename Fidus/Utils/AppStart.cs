@@ -234,6 +234,7 @@ namespace Fidus.Utils
                         var response = await aiClient.Invoke(prompt);
 
                         var systemPromptFilePath = AppFiles.GetSystemPromptFile(agentSettings.Id);
+                        AppFiles.EnsureDataDirectories();
                         await File.WriteAllTextAsync(systemPromptFilePath, response);
                     }
                     catch (Exception ex)

@@ -78,9 +78,11 @@ namespace Fidus.Agent
                     await aiClient.LoadHistoryAsync(agentHistoryFilePath);
                     loadSystemPrompt = false;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    File.Delete(agentHistoryFilePath);
+                    throw new InvalidOperationException(
+                        $"Could not load agent history from '{agentHistoryFilePath}'. The file was preserved.",
+                        ex);
                 }
             }
 
@@ -111,9 +113,7 @@ namespace Fidus.Agent
 
         private async Task SaveAgentHistoryAsync()
         {
-            if (Directory.Exists(Path.GetDirectoryName(agentHistoryFilePath)) == false)
-                Directory.CreateDirectory(Path.GetDirectoryName(agentHistoryFilePath));
-
+            AppFiles.EnsureDataDirectories();
             await aiClient.SaveHistoryAsync(agentHistoryFilePath);
         }
 
@@ -125,9 +125,7 @@ namespace Fidus.Agent
             chatHistoryBuilder.AppendLine($"{response}");
             chatHistoryBuilder.AppendLine();
 
-            if (Directory.Exists(Path.GetDirectoryName(chatHistoryFilePath)) == false)
-                Directory.CreateDirectory(Path.GetDirectoryName(chatHistoryFilePath));
-
+            AppFiles.EnsureDataDirectories();
             await File.WriteAllTextAsync(chatHistoryFilePath, chatHistoryBuilder.ToString());
         }
 
@@ -144,9 +142,11 @@ namespace Fidus.Agent
                     chatHistoryBuilder = new StringBuilder(chatHistory);
                     return chatHistoryBuilder.ToString();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    File.Delete(chatHistoryFilePath);
+                    throw new InvalidOperationException(
+                        $"Could not read chat history from '{chatHistoryFilePath}'. The file was preserved.",
+                        ex);
                 }
             }
 

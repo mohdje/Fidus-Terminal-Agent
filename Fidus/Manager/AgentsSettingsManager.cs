@@ -18,7 +18,8 @@ namespace Fidus.Manager
                 throw new FileNotFoundException($"{AppFiles.AgentsFilePath} not found");
 
             var settingsJson = File.ReadAllText(AppFiles.AgentsFilePath);
-            agentsSettings = JsonSerializer.Deserialize<List<AgentSettings>>(settingsJson) ?? new List<AgentSettings>();
+            agentsSettings = JsonSerializer.Deserialize<List<AgentSettings>>(settingsJson)
+                ?? throw new InvalidDataException($"Agent settings in '{AppFiles.AgentsFilePath}' are empty or invalid.");
         }
 
         public AgentSettings CreateAgentSettings(string name)
@@ -54,6 +55,7 @@ namespace Fidus.Manager
 
         public void SaveSettings()
         {
+            AppFiles.EnsureDataDirectories();
             var settingsJson = JsonSerializer.Serialize(agentsSettings);
             File.WriteAllText(AppFiles.AgentsFilePath, settingsJson);
         }
