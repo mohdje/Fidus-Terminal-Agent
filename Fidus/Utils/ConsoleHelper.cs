@@ -80,6 +80,7 @@ namespace Fidus.Utils
             tasksList.Remove(taskToStop);
 
             _console.MarkupLine($":green_circle: {BuildStatusMessage(taskToStop.Message, DateTime.Now - taskToStop.StartTime, taskToStop.SubMessage)}");
+            _console.WriteLine();
 
             RenderTasksProcessing();
         }
