@@ -3,17 +3,24 @@
 	<img src="./fidus-logo.svg" alt="Fidus Logo" width="128" height="128"/>
 </p>
 
-# Fidus: AI-Powered Linux CLI Assistant
+# Fidus: AI-Powered Cross-Platform CLI Assistant
 
-Fidus is a powerful command-line assistant for Linux, designed to help you accomplish tasks directly from your terminal using the latest AI models.
+Fidus is a command-line assistant for Windows, macOS, and Linux. Use natural language in your terminal to get help with coding, system operations, research, and automation, powered by the latest AI models.
+
+Fidus supports:
+
+- Windows
+- macOS
+- Linux
 
 ## Features
 
-- **Terminal-native**: Runs entirely in your terminal, no GUI required.
+- **Terminal-native**: Runs directly in your terminal on Windows, macOS, and Linux; no GUI required.
 - **AI-Powered**: Connects to your favorite Large Language Models (LLMs) including Hugging Face, Cerebras, Google, OpenAI, and more.
 - **Flexible**: Supports both single-line commands and multi-line scripts.
 - **Smart Automation**: Execute shell commands, automate workflows, and get intelligent help for coding, system operations, and more.
 - **Multiple Agents**: Create, configure, and manage multiple assistant agents with distinct personalities and behaviors.
+- **Saved Context History**: Conversation context and a readable transcript are saved automatically for each agent, so you can continue a previous session.
 - **Safe by Design**: Built-in safety checks to prevent destructive operations.
 - **Customizable**: Easily switch between different AI providers and models.
 
@@ -80,29 +87,42 @@ fidus --remove-agent -a "java-expert"
 
 Each agent can have its own prompts, default model, and usage style, making Fidus more flexible for complex terminal workflows.
 
+## Save and Resume Context
+
+Fidus automatically saves each agent's conversation context and transcript as you chat. Resume the previous session for the default `terminal` agent with:
+
+```bash
+fidus --resume
+```
+
+Use `-r` as a shorthand. To resume a named agent's session, specify it with `-a`:
+
+```bash
+fidus -r -a "java-expert"
+```
+
+The saved conversation is restored as context for the assistant, and the transcript from the previous session is shown when the session starts.
+
+## Updating Fidus
+
+Check for and install the latest stable release with:
+
+```bash
+fidus --update
+```
+
+Use `-u` as a shorthand. When an update is available, Fidus asks for administrator authorization, starts the installer for your operating system, and exits so the installer can replace the CLI.
+
 ## Safety
 Fidus will never run destructive commands without explicit confirmation and is designed to keep your system safe.
 
-## How to install it ?
+## How to install it?
 
-Download the installation script in Release section and execute it. It will download the zip, extract the deb package, install it and create a link in /usr/bin so you can use fidus command everywhere.
-
-Or you can do the installation manually:
-
-- Download the zip in Releases section, extract the .deb package and install it:
-
-```bash
-dpkg -i fidus.deb
-```
-- Create a link to the fidus binary so you can launch Fidus from anywhere
-
-```bash
-sudo ln -s /usr/bin/fidusterminal/fidus /usr/bin/fidus
-```
+Download the installation script corresponding to your OS from the Releases section or from https://fidus-terminal.vercel.app/ and run it.
 
 ## License
 MIT
 
 ---
 
-Created with ❤️ for Linux power users and AI enthusiasts.
+Created with ❤️ for power users and AI enthusiasts across platforms.
