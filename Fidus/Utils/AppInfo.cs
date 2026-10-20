@@ -4,7 +4,7 @@ namespace Fidus.Utils
 {
     public static class AppInfo
     {
-        public static string GetInstalledVersionText()
+        private static string GetInstalledVersionText()
         {
             var informationalVersion = typeof(AppInfo).Assembly
                 .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?

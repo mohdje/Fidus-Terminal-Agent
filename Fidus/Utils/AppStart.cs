@@ -27,8 +27,8 @@ namespace Fidus.Utils
             }
             else if (commandArgs.HasArgument(CommandArgId.Version))
             {
-                var versionText = AppInfo.GetInstalledVersionText();
-                AnsiConsole.MarkupLine($"[bold]FIDUS version: {Markup.Escape(versionText)}[/]");
+                var version = AppInfo.GetInstalledVersion();
+                AnsiConsole.MarkupLine($"[bold]FIDUS version: {Markup.Escape(version.ToString())}[/]");
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.Logs))
