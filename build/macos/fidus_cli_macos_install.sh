@@ -44,3 +44,5 @@ echo "Fidus CLI installed at $install_dir/fidus"
 if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
     echo "Add it to your PATH with: export PATH=\"$bin_dir:\$PATH\""
 fi
+
+echo "Fidus CLI installed successfully."

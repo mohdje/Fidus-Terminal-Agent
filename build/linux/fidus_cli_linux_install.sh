@@ -14,3 +14,7 @@ ln -s /usr/bin/fidusCLI/fidus /usr/bin/fidus
 # Cleanup
 rm fidus.deb
 rm fidus.deb.zip
+
+echo "Fidus CLI installed successfully."
+
+

@@ -96,3 +96,5 @@ finally {
         Remove-Item -LiteralPath $stagingDirectory -Recurse -Force
     }
 }
+
+Write-Output 'Fidus CLI installed successfully.'
