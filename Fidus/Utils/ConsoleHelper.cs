@@ -228,7 +228,7 @@ namespace Fidus.Utils
             if (ts.HasValue)
                 message += $"({FormatTimeSpan(ts.Value)})";
 
-            return $"{message} [gray]{text}[/]".Trim();
+            return $"{Markup.Escape(message)} [gray]{Markup.Escape(text)}[/]".Trim();
         }
 
         private string FormatTimeSpan(TimeSpan ts)
