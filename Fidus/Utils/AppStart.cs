@@ -15,6 +15,8 @@ namespace Fidus.Utils
         readonly UpdateManager updateManager = updateManager;
         readonly AgentsSettingsManager agentsSettingsManager = agentsSettingsManager;
 
+        const string DEFAULT_AGENT_NAME = "terminal";
+
         public async Task<AgentSettings?> Initialize(string[] commandArgs)
         {
 
@@ -50,7 +52,7 @@ namespace Fidus.Utils
                 return null;
             }
 
-            var agentName = commandArgs.GetArgumentValue(CommandArgId.AgentName) ?? "terminal";
+            var agentName = commandArgs.GetArgumentValue(CommandArgId.AgentName) ?? DEFAULT_AGENT_NAME;
             var agentSettings = agentsSettingsManager.GetAgentSettings(agentName);
 
             if (commandArgs.HasArgument(CommandArgId.ListAgents))
@@ -77,9 +79,9 @@ namespace Fidus.Utils
                     AnsiConsole.MarkupLine("[red]Please specify an agent name to remove using -a or --agent-name.[/]");
                     return null;
                 }
-                else if (agentNameToRemove == "terminal")
+                else if (agentNameToRemove == DEFAULT_AGENT_NAME)
                 {
-                    AnsiConsole.MarkupLine("[red]The default terminal agent cannot be removed.[/]");
+                    AnsiConsole.MarkupLine($"[red]The default {DEFAULT_AGENT_NAME} agent cannot be removed.[/]");
                     return null;
                 }
 
@@ -121,14 +123,17 @@ namespace Fidus.Utils
                 await SetupAgentSettingsAsync(agentSettings, consoleHelper);
                 agentsSettingsManager.SaveSettings();
                 AnsiConsole.MarkupLine($"[bold green]{Markup.Escape(agentSettings.Name)} agent saved successfully.[/]");
-                AnsiConsole.MarkupLine($"You can read/edit the system prompt of [bold]{Markup.Escape(agentSettings.Name)}[/] agent with the command [bold cyan]fidus -sp -a {Markup.Escape(agentSettings.Name)}[/]");
+
+                if (agentName == DEFAULT_AGENT_NAME)
+                    AnsiConsole.MarkupLine($"You can read/edit the system prompt of [bold]{Markup.Escape(agentSettings.Name)}[/] agent with the command [bold cyan]fidus -sp -a {Markup.Escape(agentSettings.Name)}[/]");
+
                 return null;
             }
             else if (commandArgs.HasArgument(CommandArgId.SystemPrompt))
             {
-                if (agentName == "terminal")
+                if (agentName == DEFAULT_AGENT_NAME)
                 {
-                    AnsiConsole.MarkupLine("[red]The default terminal agent's system prompt cannot be modified.[/]");
+                    AnsiConsole.MarkupLine($"[red]The default {DEFAULT_AGENT_NAME} agent's system prompt cannot be modified.[/]");
                 }
                 else if (agentSettings is null)
                 {
@@ -231,7 +236,7 @@ namespace Fidus.Utils
                     {
                         taskId = await consoleHelper.RenderTaskProcessingAsync("Creating agent");
 
-                        var response = await aiClient.Invoke(prompt);
+                        var response = await aiClient.Invoke(prompt, false);
 
                         var systemPromptFilePath = AppFiles.GetSystemPromptFile(agentSettings.Id);
                         AppFiles.EnsureDataDirectories();

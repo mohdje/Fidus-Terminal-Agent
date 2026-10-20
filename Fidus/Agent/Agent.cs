@@ -99,14 +99,17 @@ namespace Fidus.Agent
         }
 
 
-        public async Task<string> Invoke(string userInput)
+        public async Task<string> Invoke(string userInput, bool saveHisory = true)
         {
             var response = await aiClient.Invoke(userInput);
 
-            await Task.WhenAll(
-                SaveAgentHistoryAsync(),
-                SaveChatHistoryAsync(userInput, response)
-            );
+            if (saveHisory)
+            {
+                await Task.WhenAll(
+                    SaveAgentHistoryAsync(),
+                    SaveChatHistoryAsync(userInput, response)
+                );
+            }
 
             return response;
         }
